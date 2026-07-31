@@ -19,12 +19,12 @@ services:
     networks:
       - backend_net
 
-  # NODO 1 (App A)
-  app_a:
+  # NODO 1 - Servicio de Solicitudes
+  solicitudes_api_1:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: app_a
+    container_name: solicitudes_api_1
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-admin}
@@ -42,12 +42,12 @@ services:
     networks:
       - backend_net
 
-  # NODO 2 (App B)
-  app_b:
+  # NODO 2 - Servicio de Solicitudes
+  solicitudes_api_2:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: app_b
+    container_name: solicitudes_api_2
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-admin}
@@ -74,8 +74,8 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - app_a
-      - app_b
+      - solicitudes_api_1
+      - solicitudes_api_2
     networks:
       - backend_net
 

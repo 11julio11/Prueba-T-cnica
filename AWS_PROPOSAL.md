@@ -2,7 +2,7 @@
 
 ## 1. Flujograma de Arquitectura
 
-De acuerdo a los lineamientos requeridos, la arquitectura sigue un modelo estricto de separación de responsabilidades y redes (VPC).
+De acuerdo a los lineamientos requeridos, la arquitectura sigue un modelo estricto de separación de responsabilidades y redes (VPC), integrando el nuevo servicio dentro del ecosistema existente.
 
 ```mermaid
 graph TD
@@ -15,16 +15,16 @@ graph TD
     end
     
     subgraph "VPC - Capa Privada (Subnets Privadas aisladas de Internet)"
-        AppA[Servicio A - Solicitudes]
-        AppB[Servicio B - Ej. Usuarios]
-        Others[Otros servicios]
+        SvcSolicitudes[Microservicio de Solicitudes]
+        SvcUsuarios[Microservicio de Usuarios - Existente]
+        Others[Otros microservicios]
         
-        ALB -->|Enrutamiento por Path| AppA
-        ALB -->|Enrutamiento por Path| AppB
+        ALB -->|Enrutamiento por Path: /solicitudes| SvcSolicitudes
+        ALB -->|Enrutamiento por Path: /usuarios| SvcUsuarios
         ALB -->|Enrutamiento por Path| Others
         
-        AppA --> DB[(PostgreSQL privado)]
-        AppB --> DB
+        SvcSolicitudes --> DB[(PostgreSQL privado)]
+        SvcUsuarios --> DB
     end
     
     subgraph "AWS Ecosystem (Servicios Administrados)"
@@ -32,13 +32,13 @@ graph TD
         Logs[Logs, métricas y alertas - AWS CloudWatch]
         Trace[Trazabilidad - AWS X-Ray]
         
-        AppA -.-> Secrets
-        AppA -.-> Logs
-        AppA -.-> Trace
+        SvcSolicitudes -.-> Secrets
+        SvcSolicitudes -.-> Logs
+        SvcSolicitudes -.-> Trace
         
-        AppB -.-> Secrets
-        AppB -.-> Logs
-        AppB -.-> Trace
+        SvcUsuarios -.-> Secrets
+        SvcUsuarios -.-> Logs
+        SvcUsuarios -.-> Trace
     end
 ```
 
@@ -55,7 +55,7 @@ graph TD
 - **Application Load Balancer (ALB):** Actuará como punto único de entrada.
   - *Configuración:* Tendrá un **Listener en el puerto 443 (HTTPS)** con un certificado SSL/TLS gestionado por **AWS Certificate Manager (ACM)**.
   - *Target Groups:* Se configurará un Target Group por cada microservicio. Los *Health Checks* apuntarán al endpoint `/health` de cada API. Si Fargate levanta un contenedor y falla el health check, el ALB no le envía tráfico.
-  - *Enrutamiento:* Reglas de Path-based routing. Ej: Tráfico a `/solicitudes/*` va al Target Group del Servicio A.
+  - *Enrutamiento:* Reglas de Path-based routing. Ej: Tráfico a `/solicitudes/*` va al Target Group del **Microservicio de Solicitudes**.
 - **AWS WAF (Web Application Firewall):** Asociado al ALB.
   - *Problema que resuelve:* Configuración de **Rate Limiting** (ej. máximo 500 peticiones por minuto por IP) y protección contra inyecciones SQL/XSS, bloqueando tráfico malicioso antes de que golpee al balanceador.
 
@@ -73,7 +73,7 @@ La arquitectura se despliega en una **VPC (Virtual Private Cloud)** con segmenta
 ### Autenticación y Autorización
 - **Usuarios desde Frontend:** Se utilizará **Amazon Cognito** (u otro IdP) para generar tokens JWT. El frontend adjunta el token en el header `Authorization`.
 - **Validación en Backend:** La validación real del JWT recae sobre el código de cada servicio backend (FastAPI Dependency), garantizando que *la autorización se valide en cada servicio* según el requerimiento. (Alternativamente, el ALB puede configurarse con autenticación OIDC para filtrar tokens antes de rutarlos, pero el backend igual debe verificar los scopes/permisos de ese usuario).
-- **Autenticación entre servicios (M2M):** Si el Servicio A necesita hablar con el Servicio B, se pueden utilizar tokens firmados internamente (M2M tokens) o aprovechar **AWS App Mesh** (Service Mesh) para establecer mTLS (Mutual TLS) automático entre contenedores.
+- **Autenticación entre servicios (M2M):** Si el Microservicio de Solicitudes necesita hablar con otros microservicios, se pueden utilizar tokens firmados internamente (M2M tokens) o aprovechar **AWS App Mesh** (Service Mesh) para establecer mTLS (Mutual TLS) automático entre contenedores.
 
 ### Gestión de Secretos, Logs y Trazabilidad
 - **AWS Secrets Manager:** 
