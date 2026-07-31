@@ -1,0 +1,61 @@
+### 1. Health Check
+GET http://localhost:8000/health
+Accept: application/json
+
+###
+
+### 2. Readiness Check
+GET http://localhost:8000/health/ready
+Accept: application/json
+
+###
+
+### 3. Create Solicitude (Valid)
+POST http://localhost:8000/solicitudes
+Content-Type: application/json
+
+{
+  "external_id": "REQ-001",
+  "request_type": "soporte técnico",
+  "requester_name": "Juan Perez",
+  "email": "juan@example.com",
+  "description": "No puedo acceder al sistema de notas.",
+  "priority": "alta"
+}
+
+###
+
+### 4. Create Solicitude (Invalid Email - 422)
+POST http://localhost:8000/solicitudes
+Content-Type: application/json
+
+{
+  "external_id": "REQ-002",
+  "request_type": "soporte técnico",
+  "requester_name": "Maria",
+  "email": "correo-invalido",
+  "description": "Falla la plataforma",
+  "priority": "baja"
+}
+
+###
+
+### 5. Get All Solicitudes (With filters)
+GET http://localhost:8000/solicitudes?status=recibida&priority=alta
+Accept: application/json
+
+###
+
+### 6. Get Specific Solicitude
+GET http://localhost:8000/solicitudes/1
+Accept: application/json
+
+###
+
+### 7. Update Status
+PATCH http://localhost:8000/solicitudes/1/estado
+Content-Type: application/json
+
+{
+  "status": "en proceso"
+}
