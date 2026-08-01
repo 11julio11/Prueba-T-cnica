@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Prueba Técnica Backend – Solicitudes Institucionales",
-		"description": "Colección para probar el servicio de gestión de solicitudes institucionales. Base URL: http://localhost:8000",
+		"description": "Colección para probar el servicio de gestión de requests institucionales. Base URL: http://localhost:8000",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -11,7 +11,7 @@
 			"type": "string"
 		},
 		{
-			"key": "solicitud_id",
+			"key": "request_id",
 			"value": "",
 			"type": "string"
 		}
@@ -44,16 +44,16 @@
 			"response": []
 		},
 		{
-			"name": "3. Crear Solicitud – Soporte Técnico (201)",
+			"name": "3. Crear ServiceRequest – Soporte Técnico (201)",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
 							"var json = pm.response.json();",
-							"pm.collectionVariables.set('solicitud_id', json.id);",
+							"pm.collectionVariables.set('request_id', json.id);",
 							"pm.test('Status 201', function(){ pm.response.to.have.status(201); });",
-							"pm.test('Estado inicial es recibida', function(){ pm.expect(json.estado).to.eql('recibida'); });"
+							"pm.test('Status inicial es received', function(){ pm.expect(json.status).to.eql('received'); });"
 						],
 						"type": "text/javascript"
 					}
@@ -66,19 +66,19 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"identificador_externo\": \"EXT-TEST-001\",\n    \"tipo\": \"soporte_tecnico\",\n    \"nombre_solicitante\": \"Test User\",\n    \"correo\": \"test.user@example.com\",\n    \"descripcion\": \"No puedo acceder al sistema de notas desde ayer en la mañana\",\n    \"prioridad\": \"alta\"\n}",
+					"raw": "{\n    \"external_id\": \"EXT-TEST-001\",\n    \"type\": \"technical_support\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"test.user@example.com\",\n    \"description\": \"No puedo acceder al sistema de notas desde ayer en la mañana\",\n    \"priority\": \"high\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes",
+					"raw": "{{base_url}}/api/v1/requests",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes"]
+					"path": ["api", "v1", "requests"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "4. Crear Solicitud – Acceso Plataforma (201)",
+			"name": "4. Crear ServiceRequest – Acceso Plataforma (201)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -86,19 +86,19 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"identificador_externo\": \"EXT-TEST-002\",\n    \"tipo\": \"acceso_plataforma\",\n    \"nombre_solicitante\": \"Test User Two\",\n    \"correo\": \"user2@example.com\",\n    \"descripcion\": \"Necesito acceso al módulo de reportes financieros\",\n    \"prioridad\": \"media\"\n}",
+					"raw": "{\n    \"external_id\": \"EXT-TEST-002\",\n    \"type\": \"platform_access\",\n    \"requester_name\": \"Test User Two\",\n    \"email\": \"user2@example.com\",\n    \"description\": \"Necesito acceso al módulo de reportes financieros\",\n    \"priority\": \"medium\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes",
+					"raw": "{{base_url}}/api/v1/requests",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes"]
+					"path": ["api", "v1", "requests"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "5. Crear Solicitud – Académica (201)",
+			"name": "5. Crear ServiceRequest – Académica (201)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -106,19 +106,19 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"identificador_externo\": \"EXT-TEST-003\",\n    \"tipo\": \"academica\",\n    \"nombre_solicitante\": \"Test User Three\",\n    \"correo\": \"user3@example.com\",\n    \"descripcion\": \"Solicitud de corrección de notas del segundo semestre según acta adjunta\",\n    \"prioridad\": \"alta\"\n}",
+					"raw": "{\n    \"external_id\": \"EXT-TEST-003\",\n    \"type\": \"academic\",\n    \"requester_name\": \"Test User Three\",\n    \"email\": \"user3@example.com\",\n    \"description\": \"ServiceRequest de corrección de notas del segundo semestre según acta adjunta\",\n    \"priority\": \"high\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes",
+					"raw": "{{base_url}}/api/v1/requests",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes"]
+					"path": ["api", "v1", "requests"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "6. Crear Solicitud – DUPLICADA (409)",
+			"name": "6. Crear ServiceRequest – DUPLICADA (409)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -126,19 +126,19 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"identificador_externo\": \"EXT-TEST-001\",\n    \"tipo\": \"soporte_tecnico\",\n    \"nombre_solicitante\": \"Test User\",\n    \"correo\": \"test.user@example.com\",\n    \"descripcion\": \"Intento duplicar el identificador EXT-TEST-001\",\n    \"prioridad\": \"baja\"\n}",
+					"raw": "{\n    \"external_id\": \"EXT-TEST-001\",\n    \"type\": \"technical_support\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"test.user@example.com\",\n    \"description\": \"Intento duplicar el identificador EXT-TEST-001\",\n    \"priority\": \"low\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes",
+					"raw": "{{base_url}}/api/v1/requests",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes"]
+					"path": ["api", "v1", "requests"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "7. Crear Solicitud – Email Inválido (422)",
+			"name": "7. Crear ServiceRequest – Email Inválido (422)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -146,19 +146,19 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"identificador_externo\": \"EXT-ERR-001\",\n    \"tipo\": \"soporte_tecnico\",\n    \"nombre_solicitante\": \"Test User\",\n    \"correo\": \"esto-no-es-un-correo\",\n    \"descripcion\": \"Descripción lo suficientemente larga para pasar la validación mínima\",\n    \"prioridad\": \"alta\"\n}",
+					"raw": "{\n    \"external_id\": \"EXT-ERR-001\",\n    \"type\": \"technical_support\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"esto-no-es-un-email\",\n    \"description\": \"Descripción lo suficientemente larga para pasar la validación mínima\",\n    \"priority\": \"high\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes",
+					"raw": "{{base_url}}/api/v1/requests",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes"]
+					"path": ["api", "v1", "requests"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "8. Crear Solicitud – Tipo Inválido (422)",
+			"name": "8. Crear ServiceRequest – Tipo Inválido (422)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -166,13 +166,13 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"identificador_externo\": \"EXT-ERR-002\",\n    \"tipo\": \"tipo_que_no_existe\",\n    \"nombre_solicitante\": \"Test User\",\n    \"correo\": \"test@example.com\",\n    \"descripcion\": \"Descripción lo suficientemente larga para pasar la validación mínima\",\n    \"prioridad\": \"alta\"\n}",
+					"raw": "{\n    \"external_id\": \"EXT-ERR-002\",\n    \"type\": \"tipo_que_no_existe\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"test@example.com\",\n    \"description\": \"Descripción lo suficientemente larga para pasar la validación mínima\",\n    \"priority\": \"high\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes",
+					"raw": "{{base_url}}/api/v1/requests",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes"]
+					"path": ["api", "v1", "requests"]
 				}
 			},
 			"response": []
@@ -183,72 +183,72 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes",
+					"raw": "{{base_url}}/api/v1/requests",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes"]
+					"path": ["api", "v1", "requests"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "10. Listar con Filtro – estado=recibida",
+			"name": "10. Listar con Filtro – status=received",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes?estado=recibida",
+					"raw": "{{base_url}}/api/v1/requests?status=received",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes"],
-					"query": [{"key": "estado", "value": "recibida"}]
+					"path": ["api", "v1", "requests"],
+					"query": [{"key": "status", "value": "received"}]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "11. Listar con Filtro – tipo y prioridad",
+			"name": "11. Listar con Filtro – type y priority",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes?tipo=soporte_tecnico&prioridad=alta",
+					"raw": "{{base_url}}/api/v1/requests?type=technical_support&priority=high",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes"],
+					"path": ["api", "v1", "requests"],
 					"query": [
-						{"key": "tipo", "value": "soporte_tecnico"},
-						{"key": "prioridad", "value": "alta"}
+						{"key": "type", "value": "technical_support"},
+						{"key": "priority", "value": "high"}
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "12. Obtener Solicitud por ID (variable)",
+			"name": "12. Obtener ServiceRequest por ID (variable)",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes/{{solicitud_id}}",
+					"raw": "{{base_url}}/api/v1/requests/{{request_id}}",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes", "{{solicitud_id}}"]
+					"path": ["api", "v1", "requests", "{{request_id}}"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "13. Obtener Solicitud – ID Inexistente (404)",
+			"name": "13. Obtener ServiceRequest – ID Inexistente (404)",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes/00000000-0000-0000-0000-000000000000",
+					"raw": "{{base_url}}/api/v1/requests/00000000-0000-0000-0000-000000000000",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes", "00000000-0000-0000-0000-000000000000"]
+					"path": ["api", "v1", "requests", "00000000-0000-0000-0000-000000000000"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "14. Actualizar Estado → en_proceso (200)",
+			"name": "14. Actualizar Status → in_progress (200)",
 			"request": {
 				"method": "PATCH",
 				"header": [
@@ -256,19 +256,19 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"estado\": \"en_proceso\"\n}",
+					"raw": "{\n    \"status\": \"in_progress\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes/{{solicitud_id}}/estado",
+					"raw": "{{base_url}}/api/v1/requests/{{request_id}}/status",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes", "{{solicitud_id}}", "estado"]
+					"path": ["api", "v1", "requests", "{{request_id}}", "status"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "15. Actualizar Estado → completada (200)",
+			"name": "15. Actualizar Status → completed (200)",
 			"request": {
 				"method": "PATCH",
 				"header": [
@@ -276,19 +276,19 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"estado\": \"completada\"\n}",
+					"raw": "{\n    \"status\": \"completed\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes/{{solicitud_id}}/estado",
+					"raw": "{{base_url}}/api/v1/requests/{{request_id}}/status",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes", "{{solicitud_id}}", "estado"]
+					"path": ["api", "v1", "requests", "{{request_id}}", "status"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "16. Actualizar Estado – Estado Inválido (422)",
+			"name": "16. Actualizar Status – Status Inválido (422)",
 			"request": {
 				"method": "PATCH",
 				"header": [
@@ -296,13 +296,13 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"estado\": \"pendiente\"\n}",
+					"raw": "{\n    \"status\": \"pendiente\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/solicitudes/{{solicitud_id}}/estado",
+					"raw": "{{base_url}}/api/v1/requests/{{request_id}}/status",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "solicitudes", "{{solicitud_id}}", "estado"]
+					"path": ["api", "v1", "requests", "{{request_id}}", "status"]
 				}
 			},
 			"response": []

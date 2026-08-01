@@ -5,9 +5,9 @@ from sqlalchemy import DateTime, Enum, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.domain.value_objects.estado import Estado
-from app.domain.value_objects.prioridad import Prioridad
-from app.domain.value_objects.tipo_solicitud import TipoSolicitud
+from app.domain.value_objects.status import Status
+from app.domain.value_objects.priority import Priority
+from app.domain.value_objects.request_type import RequestType
 from app.infrastructure.database.connection import Base
 
 
@@ -15,45 +15,45 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-class SolicitudModel(Base):
-    __tablename__ = "solicitudes"
+class RequestModel(Base):
+    __tablename__ = "requests"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
     )
-    identificador_externo: Mapped[str] = mapped_column(
+    external_id: Mapped[str] = mapped_column(
         String(100),
         unique=True,
         nullable=False,
         index=True,
     )
-    tipo: Mapped[TipoSolicitud] = mapped_column(
-        Enum(TipoSolicitud, name="tipo_solicitud_enum", values_callable=lambda x: [e.value for e in x]),
+    type: Mapped[RequestType] = mapped_column(
+        Enum(RequestType, name="request_type_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
     )
-    nombre_solicitante: Mapped[str] = mapped_column(String(200), nullable=False)
-    correo: Mapped[str] = mapped_column(String(254), nullable=False)
-    descripcion: Mapped[str] = mapped_column(Text, nullable=False)
-    prioridad: Mapped[Prioridad] = mapped_column(
-        Enum(Prioridad, name="prioridad_enum", values_callable=lambda x: [e.value for e in x]),
+    requester_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str] = mapped_column(String(254), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    priority: Mapped[Priority] = mapped_column(
+        Enum(Priority, name="priority_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
     )
-    estado: Mapped[Estado] = mapped_column(
-        Enum(Estado, name="estado_enum", values_callable=lambda x: [e.value for e in x]),
+    status: Mapped[Status] = mapped_column(
+        Enum(Status, name="status_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
-        default=Estado.RECIBIDA,
+        default=Status.RECEIVED,
         index=True,
     )
-    creado_en: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         default=_utcnow,
     )
-    actualizado_en: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         default=_utcnow,
@@ -62,5 +62,5 @@ class SolicitudModel(Base):
 
     # Índice compuesto para filtros frecuentes
     __table_args__ = (
-        Index("ix_solicitudes_estado_tipo_prioridad", "estado", "tipo", "prioridad"),
+        Index("ix_requests_status_type_priority", "status", "type", "priority"),
     )

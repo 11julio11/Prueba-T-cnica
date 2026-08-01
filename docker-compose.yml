@@ -3,7 +3,7 @@ services:
   # ── Base de datos ────────────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
-    container_name: solicitudes-db
+    container_name: requests-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -25,7 +25,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: solicitudes-backend
+    container_name: requests-backend
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
@@ -50,7 +50,7 @@ services:
     build:
       context: ./consumer
       dockerfile: Dockerfile
-    container_name: solicitudes-consumer
+    container_name: requests-consumer
     environment:
       API_BASE_URL: http://backend:8000/api/v1
       MAX_ATTEMPTS: ${MAX_ATTEMPTS:-5}

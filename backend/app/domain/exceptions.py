@@ -6,20 +6,20 @@ class DomainException(Exception):
     pass
 
 
-class SolicitudNoEncontrada(DomainException):
+class RequestNotFoundError(DomainException):
     def __init__(self, id: UUID) -> None:
         self.id = id
-        super().__init__(f"Solicitud con id '{id}' no encontrada")
+        super().__init__(f"ServiceRequest con id '{id}' no encontrada")
 
 
-class IdentificadorDuplicado(DomainException):
-    def __init__(self, identificador_externo: str) -> None:
-        self.identificador_externo = identificador_externo
+class DuplicateExternalIdError(DomainException):
+    def __init__(self, external_id: str) -> None:
+        self.external_id = external_id
         super().__init__(
-            f"Ya existe una solicitud con identificador externo '{identificador_externo}'"
+            f"Ya existe una request con identificador externo '{external_id}'"
         )
 
 
-class EstadoInvalido(DomainException):
-    def __init__(self, estado: str) -> None:
-        super().__init__(f"Estado '{estado}' no es válido")
+class InvalidStatusError(DomainException):
+    def __init__(self, status: str) -> None:
+        super().__init__(f"Status '{status}' no es válido")

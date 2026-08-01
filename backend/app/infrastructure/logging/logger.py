@@ -8,7 +8,7 @@ from typing import Any
 class JSONFormatter(logging.Formatter):
     """Formatea cada log como una línea JSON estructurada."""
 
-    SERVICE_NAME = "solicitudes-api"
+    SERVICE_NAME = "requests-api"
 
     def format(self, record: logging.LogRecord) -> str:
         log_entry: dict[str, Any] = {
@@ -21,8 +21,8 @@ class JSONFormatter(logging.Formatter):
 
         # Campos opcionales enriquecidos
         for field in (
-            "solicitud_id",
-            "identificador_externo",
+            "request_id",
+            "external_id",
             "method",
             "endpoint",
             "status_code",

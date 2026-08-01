@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.exception_handlers import register_exception_handlers
-from app.api.v1.routers import health, solicitudes
+from app.api.v1.routers import health, requests
 from app.config import settings
 from app.infrastructure.logging.logger import get_logger, setup_logging
 
@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    description="API REST para gestión de solicitudes institucionales",
+    description="API REST para gestión de requests institucionales",
     lifespan=lifespan,
 )
 
@@ -37,4 +37,4 @@ app.add_middleware(
 register_exception_handlers(app)
 
 app.include_router(health.router)
-app.include_router(solicitudes.router, prefix="/api/v1")
+app.include_router(requests.router, prefix="/api/v1")

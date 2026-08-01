@@ -1,32 +1,32 @@
-from app.domain.entities.solicitud import Solicitud
-from app.infrastructure.database.models import SolicitudModel
+from app.domain.entities.service_request import ServiceRequest
+from app.infrastructure.database.models import RequestModel
 
 
-def to_entity(model: SolicitudModel) -> Solicitud:
-    return Solicitud(
+def to_entity(model: RequestModel) -> ServiceRequest:
+    return ServiceRequest(
         id=model.id,
-        identificador_externo=model.identificador_externo,
-        tipo=model.tipo,
-        nombre_solicitante=model.nombre_solicitante,
-        correo=model.correo,
-        descripcion=model.descripcion,
-        prioridad=model.prioridad,
-        estado=model.estado,
-        creado_en=model.creado_en,
-        actualizado_en=model.actualizado_en,
+        external_id=model.external_id,
+        type=model.type,
+        requester_name=model.requester_name,
+        email=model.email,
+        description=model.description,
+        priority=model.priority,
+        status=model.status,
+        created_at=model.created_at,
+        updated_at=model.updated_at,
     )
 
 
-def to_model(entity: Solicitud) -> SolicitudModel:
-    return SolicitudModel(
+def to_model(entity: ServiceRequest) -> RequestModel:
+    return RequestModel(
         id=entity.id,
-        identificador_externo=entity.identificador_externo,
-        tipo=entity.tipo,
-        nombre_solicitante=entity.nombre_solicitante,
-        correo=entity.correo,
-        descripcion=entity.descripcion,
-        prioridad=entity.prioridad,
-        estado=entity.estado,
-        creado_en=entity.creado_en,
-        actualizado_en=entity.actualizado_en,
+        external_id=entity.external_id,
+        type=entity.type,
+        requester_name=entity.requester_name,
+        email=entity.email,
+        description=entity.description,
+        priority=entity.priority,
+        status=entity.status,
+        created_at=entity.created_at,
+        updated_at=entity.updated_at,
     )

@@ -3,36 +3,36 @@ from uuid import uuid4
 
 import pytest
 
-from app.domain.entities.solicitud import Solicitud
-from app.domain.ports.solicitud_repository import SolicitudRepository
-from app.domain.services.solicitud_service import SolicitudService
-from app.domain.value_objects.estado import Estado
-from app.domain.value_objects.prioridad import Prioridad
-from app.domain.value_objects.tipo_solicitud import TipoSolicitud
+from app.domain.entities.service_request import ServiceRequest
+from app.domain.ports.request_repository import RequestRepository
+from app.domain.services.request_service import RequestService
+from app.domain.value_objects.status import Status
+from app.domain.value_objects.priority import Priority
+from app.domain.value_objects.request_type import RequestType
 
 
 @pytest.fixture
 def repo_mock() -> MagicMock:
-    return MagicMock(spec=SolicitudRepository)
+    return MagicMock(spec=RequestRepository)
 
 
 @pytest.fixture
-def service(repo_mock: MagicMock) -> SolicitudService:
-    return SolicitudService(repo=repo_mock)
+def service(repo_mock: MagicMock) -> RequestService:
+    return RequestService(repo=repo_mock)
 
 
 @pytest.fixture
 def datos_validos() -> dict:
     return {
-        "identificador_externo": "EXT-001",
-        "tipo": TipoSolicitud.SOPORTE_TECNICO,
-        "nombre_solicitante": "Test User",
-        "correo": "test.user@example.com",
-        "descripcion": "Sample description for automated testing",
-        "prioridad": Prioridad.ALTA,
+        "external_id": "EXT-001",
+        "type": RequestType.SOPORTE_TECNICO,
+        "requester_name": "Test User",
+        "email": "test.user@example.com",
+        "description": "Sample description for automated testing",
+        "priority": Priority.ALTA,
     }
 
 
 @pytest.fixture
-def solicitud_existente(datos_validos: dict) -> Solicitud:
-    return Solicitud(**datos_validos)
+def solicitud_existente(datos_validos: dict) -> ServiceRequest:
+    return ServiceRequest(**datos_validos)

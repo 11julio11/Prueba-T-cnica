@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.domain.exceptions import IdentificadorDuplicado, SolicitudNoEncontrada
+from app.domain.exceptions import DuplicateExternalIdError, RequestNotFoundError
 from app.infrastructure.logging.logger import get_logger
 
 logger = get_logger(__name__)
@@ -10,12 +10,12 @@ logger = get_logger(__name__)
 
 def register_exception_handlers(app: FastAPI) -> None:
 
-    @app.exception_handler(SolicitudNoEncontrada)
+    @app.exception_handler(RequestNotFoundError)
     async def handle_not_found(
-        request: Request, exc: SolicitudNoEncontrada
+        request: Request, exc: RequestNotFoundError
     ) -> JSONResponse:
         logger.warning(
-            "Solicitud no encontrada",
+            "ServiceRequest no encontrada",
             extra={"error": str(exc), "endpoint": str(request.url.path)},
         )
         return JSONResponse(
@@ -23,14 +23,14 @@ def register_exception_handlers(app: FastAPI) -> None:
             content={"detail": str(exc)},
         )
 
-    @app.exception_handler(IdentificadorDuplicado)
+    @app.exception_handler(DuplicateExternalIdError)
     async def handle_duplicate(
-        request: Request, exc: IdentificadorDuplicado
+        request: Request, exc: DuplicateExternalIdError
     ) -> JSONResponse:
         logger.warning(
             "Identificador duplicado",
             extra={
-                "identificador_externo": exc.identificador_externo,
+                "external_id": exc.external_id,
                 "endpoint": str(request.url.path),
             },
         )

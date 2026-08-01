@@ -17,7 +17,7 @@ from typing import Any, Optional
 # ── Structured JSON logging ─────────────────────────────────────────────────
 
 class JSONFormatter(logging.Formatter):
-    SERVICE = "solicitudes-consumer"
+    SERVICE = "requests-consumer"
 
     def format(self, record: logging.LogRecord) -> str:
         entry: dict[str, Any] = {
@@ -27,8 +27,8 @@ class JSONFormatter(logging.Formatter):
             "message": record.getMessage(),
         }
         for field in (
-            "identificador_externo",
-            "solicitud_id",
+            "external_id",
+            "request_id",
             "attempt",
             "max_attempts",
             "status_code",
@@ -66,53 +66,53 @@ STARTUP_WAIT_S = float(os.getenv("STARTUP_WAIT_S", "5.0"))
 
 SOLICITUDES: list[dict] = [
     {
-        "identificador_externo": "CONS-001",
-        "tipo": "soporte_tecnico",
-        "nombre_solicitante": "Ana Martínez",
-        "correo": "ana.martinez@institucion.edu.co",
-        "descripcion": "No puedo acceder al sistema de notas desde ayer en la mañana",
-        "prioridad": "alta",
+        "external_id": "CONS-001",
+        "type": "technical_support",
+        "requester_name": "Ana Martínez",
+        "email": "ana.martinez@institucion.edu.co",
+        "description": "No puedo acceder al sistema de notas desde ayer en la mañana",
+        "priority": "high",
     },
     {
-        "identificador_externo": "CONS-002",
-        "tipo": "acceso_plataforma",
-        "nombre_solicitante": "Carlos Pérez",
-        "correo": "carlos.perez@institucion.edu.co",
-        "descripcion": "Necesito acceso al módulo de reportes financieros del tercer piso",
-        "prioridad": "media",
+        "external_id": "CONS-002",
+        "type": "platform_access",
+        "requester_name": "Carlos Pérez",
+        "email": "carlos.perez@institucion.edu.co",
+        "description": "Necesito acceso al módulo de reportes financieros del tercer piso",
+        "priority": "medium",
     },
     {
-        "identificador_externo": "CONS-003",
-        "tipo": "academica",
-        "nombre_solicitante": "Laura Gómez",
-        "correo": "laura.gomez@institucion.edu.co",
-        "descripcion": "Solicitud de corrección de notas del segundo semestre según acta adjunta",
-        "prioridad": "alta",
+        "external_id": "CONS-003",
+        "type": "academic",
+        "requester_name": "Laura Gómez",
+        "email": "laura.gomez@institucion.edu.co",
+        "description": "ServiceRequest de corrección de notas del segundo semestre según acta adjunta",
+        "priority": "high",
     },
     {
-        "identificador_externo": "CONS-004",
-        "tipo": "administrativa",
-        "nombre_solicitante": "Juan Rodríguez",
-        "correo": "juan.rodriguez@institucion.edu.co",
-        "descripcion": "Solicitud de paz y salvo para trámite de grado, requiere respuesta urgente",
-        "prioridad": "baja",
+        "external_id": "CONS-004",
+        "type": "administrative",
+        "requester_name": "Juan Rodríguez",
+        "email": "juan.rodriguez@institucion.edu.co",
+        "description": "ServiceRequest de paz y salvo para trámite de grado, requiere respuesta urgente",
+        "priority": "low",
     },
     {
-        "identificador_externo": "CONS-005",
-        "tipo": "soporte_tecnico",
-        "nombre_solicitante": "María López",
-        "correo": "maria.lopez@institucion.edu.co",
-        "descripcion": "El computador del laboratorio 3 no enciende desde el martes en la tarde",
-        "prioridad": "media",
+        "external_id": "CONS-005",
+        "type": "technical_support",
+        "requester_name": "María López",
+        "email": "maria.lopez@institucion.edu.co",
+        "description": "El computador del laboratorio 3 no enciende desde el martes en la tarde",
+        "priority": "medium",
     },
     # Intentionally invalid request to test 4xx error handling
     {
-        "identificador_externo": "CONS-ERR",
-        "tipo": "tipo_invalido",          # non-existent catalog value
-        "nombre_solicitante": "Test Error",
-        "correo": "no-es-correo",          # invalid email
-        "descripcion": "Error test",
-        "prioridad": "urgente",            # non-existent priority
+        "external_id": "CONS-ERR",
+        "type": "tipo_invalido",          # non-existent catalog value
+        "requester_name": "Test Error",
+        "email": "no-es-email",          # invalid email
+        "description": "Error test",
+        "priority": "urgente",            # non-existent priority
     },
 ]
 
@@ -185,10 +185,10 @@ def post_con_retry(
 
             if status_code in (200, 201):
                 log.info(
-                    "Solicitud creada exitosamente",
+                    "ServiceRequest creada exitosamente",
                     extra={
-                        "identificador_externo": identificador,
-                        "solicitud_id": body.get("id"),
+                        "external_id": identificador,
+                        "request_id": body.get("id"),
                         "attempt": attempt,
                         "status_code": status_code,
                         "duration_ms": duration,
@@ -203,7 +203,7 @@ def post_con_retry(
                 log.warning(
                     "Error definitivo (4xx), no se reintentará",
                     extra={
-                        "identificador_externo": identificador,
+                        "external_id": identificador,
                         "attempt": attempt,
                         "status_code": status_code,
                         "error": body.get("detail", "Error de cliente"),
@@ -217,7 +217,7 @@ def post_con_retry(
             log.warning(
                 "Temporary error (5xx), retrying",
                 extra={
-                    "identificador_externo": identificador,
+                    "external_id": identificador,
                     "attempt": attempt,
                     "max_attempts": MAX_ATTEMPTS,
                     "status_code": status_code,
@@ -230,7 +230,7 @@ def post_con_retry(
             log.warning(
                 "Connection error, retrying",
                 extra={
-                    "identificador_externo": identificador,
+                    "external_id": identificador,
                     "attempt": attempt,
                     "max_attempts": MAX_ATTEMPTS,
                     "error": str(exc),
@@ -244,7 +244,7 @@ def post_con_retry(
             log.info(
                 f"Esperando {delay:.1f}s antes del siguiente intento",
                 extra={
-                    "identificador_externo": identificador,
+                    "external_id": identificador,
                     "attempt": attempt,
                 },
             )
@@ -253,7 +253,7 @@ def post_con_retry(
     log.error(
         "Se agotaron los reintentos",
         extra={
-            "identificador_externo": identificador,
+            "external_id": identificador,
             "max_attempts": MAX_ATTEMPTS,
             "last_status_code": last_status,
         },
@@ -286,15 +286,15 @@ def esperar_backend() -> None:
     raise RuntimeError("El backend no respondió después de 90 segundos")
 
 
-def consultar_estado(solicitud_id: str) -> Optional[dict]:
-    url = f"{API_BASE_URL}/solicitudes/{solicitud_id}"
+def consultar_status(request_id: str) -> Optional[dict]:
+    url = f"{API_BASE_URL}/requests/{request_id}"
     try:
         status_code, body = http_get(url, timeout=TIMEOUT_S)
         if status_code == 200:
             log.info(
-                "Estado consultado",
+                "Status consultado",
                 extra={
-                    "solicitud_id": solicitud_id,
+                    "request_id": request_id,
                     "status_code": status_code,
                     "method": "GET",
                     "endpoint": url,
@@ -302,55 +302,55 @@ def consultar_estado(solicitud_id: str) -> Optional[dict]:
             )
             return body
         log.warning(
-            "No se pudo consultar el estado",
-            extra={"solicitud_id": solicitud_id, "status_code": status_code},
+            "No se pudo consultar el status",
+            extra={"request_id": request_id, "status_code": status_code},
         )
     except Exception as exc:
         log.error(
-            "Error al consultar estado",
-            extra={"solicitud_id": solicitud_id, "error": str(exc)},
+            "Error al consultar status",
+            extra={"request_id": request_id, "error": str(exc)},
         )
     return None
 
 
 def main() -> None:
-    log.info("Iniciando consumidor de solicitudes")
+    log.info("Iniciando consumidor de requests")
     time.sleep(STARTUP_WAIT_S)
     esperar_backend()
 
-    url_crear = f"{API_BASE_URL}/solicitudes"
+    url_crear = f"{API_BASE_URL}/requests"
     resultados: list[dict] = []
 
     # ── Phase 1: create all requests ──────────────────────────────────
-    log.info(f"Iniciando creación de {len(SOLICITUDES)} solicitudes")
+    log.info(f"Iniciando creación de {len(SOLICITUDES)} requests")
 
-    for solicitud in SOLICITUDES:
-        ident = solicitud["identificador_externo"]
-        log.info("Enviando solicitud", extra={"identificador_externo": ident})
-        resultado = post_con_retry(url_crear, solicitud, ident)
+    for request in SOLICITUDES:
+        ident = request["external_id"]
+        log.info("Enviando request", extra={"external_id": ident})
+        resultado = post_con_retry(url_crear, request, ident)
         if resultado:
             resultados.append(resultado)
 
     log.info(
-        "Fase de creación completada",
+        "Fase de creación completed",
         extra={"creadas": len(resultados), "fallidas": len(SOLICITUDES) - len(resultados)},
     )
 
     # ── Phase 2: check status of created ones ───────────────────────────────
     if resultados:
-        log.info("Consultando estado de solicitudes creadas")
+        log.info("Consultando status de requests creadas")
         time.sleep(2)
 
         for item in resultados:
-            estado_actual = consultar_estado(item["id"])
-            if estado_actual:
+            status_actual = consultar_status(item["id"])
+            if status_actual:
                 log.info(
-                    "Resumen de solicitud",
+                    "Resumen de request",
                     extra={
-                        "solicitud_id": item["id"],
-                        "identificador_externo": item["identificador_externo"],
-                        "estado": estado_actual["estado"],
-                        "prioridad": estado_actual["prioridad"],
+                        "request_id": item["id"],
+                        "external_id": item["external_id"],
+                        "status": status_actual["status"],
+                        "priority": status_actual["priority"],
                     },
                 )
 
