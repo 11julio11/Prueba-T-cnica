@@ -15,10 +15,12 @@ from backend.domain.schemas import (
 
 router = APIRouter(prefix="/solicitudes", tags=["Solicitudes"])
 
-def get_solicitude_service(db: Session = Depends(get_db)) -> SolicitudeService:
+def get_repository(db: Session = Depends(get_db)) -> ISolicitudeRepository:
+    """Dependency injection for the infrastructure repository."""
+    return SolicitudeRepository(db)
+
+def get_solicitude_service(repository: ISolicitudeRepository = Depends(get_repository)) -> SolicitudeService:
     """Dependency injection for the domain service."""
-    # We instantiate the specific adapter (Infrastructure)
-    repository: ISolicitudeRepository = SolicitudeRepository(db)
     # We inject it into the domain service that expects a port (Interface)
     return SolicitudeService(repository)
 
