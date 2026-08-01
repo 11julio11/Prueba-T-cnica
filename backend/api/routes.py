@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from backend.infrastructure.database import get_db
 from backend.infrastructure.repositories import SolicitudeRepository
+from backend.domain.services import SolicitudeService
 from backend.domain.schemas import (
     SolicitudeCreate, 
     SolicitudeResponse, 
@@ -13,51 +14,50 @@ from backend.domain.schemas import (
 
 router = APIRouter(prefix="/solicitudes", tags=["Solicitudes"])
 
-def get_repository(db: Session = Depends(get_db)) -> SolicitudeRepository:
-    """Dependency injection for the repository."""
-    return SolicitudeRepository(db)
+def get_solicitude_service(db: Session = Depends(get_db)) -> SolicitudeService:
+    """Dependency injection for the domain service."""
+    repository = SolicitudeRepository(db)
+    return SolicitudeService(repository)
 
 @router.post("", response_model=SolicitudeResponse, status_code=status.HTTP_201_CREATED)
 def create_solicitude(
     solicitude: SolicitudeCreate, 
-    repo: SolicitudeRepository = Depends(get_repository)
+    service: SolicitudeService = Depends(get_solicitude_service)
 ):
     """
     Register a new solicitude.
     """
-    # The repository handles the logic and uniqueness validation
-    # in a real world scenario, business rules could be placed in a Service layer.
-    return repo.create(solicitude)
+    return service.create_solicitude(solicitude)
 
 @router.get("", response_model=list[SolicitudeResponse])
 def get_solicitudes(
     status: SolicitudeStatus | None = Query(None, description="Filter by status"),
     request_type: SolicitudeType | None = Query(None, description="Filter by request type"),
     priority: SolicitudePriority | None = Query(None, description="Filter by priority"),
-    repo: SolicitudeRepository = Depends(get_repository)
+    service: SolicitudeService = Depends(get_solicitude_service)
 ):
     """
     Retrieve solicitudes with optional filtering.
     """
-    return repo.get_all(status=status, request_type=request_type, priority=priority)
+    return service.get_all_solicitudes(status=status, request_type=request_type, priority=priority)
 
 @router.get("/{id}", response_model=SolicitudeResponse)
 def get_solicitude(
     id: int, 
-    repo: SolicitudeRepository = Depends(get_repository)
+    service: SolicitudeService = Depends(get_solicitude_service)
 ):
     """
     Retrieve a specific solicitude by ID.
     """
-    return repo.get_by_id(id)
+    return service.get_solicitude_by_id(id)
 
 @router.patch("/{id}/estado", response_model=SolicitudeResponse)
 def update_solicitude_status(
     id: int, 
     status_update: SolicitudeUpdateStatus, 
-    repo: SolicitudeRepository = Depends(get_repository)
+    service: SolicitudeService = Depends(get_solicitude_service)
 ):
     """
     Update the status of an existing solicitude.
     """
-    return repo.update_status(id, status_update)
+    return service.update_solicitude_status(id, status_update)
