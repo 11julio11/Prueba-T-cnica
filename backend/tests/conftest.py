@@ -26,9 +26,9 @@ def datos_validos() -> dict:
     return {
         "identificador_externo": "EXT-001",
         "tipo": TipoSolicitud.SOPORTE_TECNICO,
-        "nombre_solicitante": "David Julio",
-        "correo": "david@example.com",
-        "descripcion": "Necesito acceso al sistema institucional",
+        "nombre_solicitante": "Test User",
+        "correo": "test.user@example.com",
+        "descripcion": "Sample description for automated testing",
         "prioridad": Prioridad.ALTA,
     }
 

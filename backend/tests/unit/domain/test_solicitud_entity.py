@@ -12,9 +12,9 @@ def _solicitud_base(**kwargs) -> Solicitud:
     defaults = {
         "identificador_externo": "EXT-001",
         "tipo": TipoSolicitud.SOPORTE_TECNICO,
-        "nombre_solicitante": "David Julio",
-        "correo": "david@example.com",
-        "descripcion": "Descripción válida del requerimiento",
+        "nombre_solicitante": "Test User",
+        "correo": "test.user@example.com",
+        "descripcion": "Sample description for automated testing",
         "prioridad": Prioridad.MEDIA,
     }
     defaults.update(kwargs)

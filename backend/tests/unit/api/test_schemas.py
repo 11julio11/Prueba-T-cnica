@@ -11,9 +11,9 @@ def _payload_valido(**kwargs) -> dict:
     base = {
         "identificador_externo": "EXT-001",
         "tipo": "soporte_tecnico",
-        "nombre_solicitante": "David Julio",
-        "correo": "david@example.com",
-        "descripcion": "Necesito acceso al sistema institucional",
+        "nombre_solicitante": "Test User",
+        "correo": "test.user@example.com",
+        "descripcion": "Sample description for automated testing",
         "prioridad": "alta",
     }
     base.update(kwargs)

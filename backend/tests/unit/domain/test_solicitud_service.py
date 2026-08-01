@@ -129,3 +129,51 @@ class TestListarSolicitudes:
         resultado = service.listar()
 
         assert len(resultado) == 2
+
+
+class TestDuplicados:
+    """Verifies that duplicate external identifiers are rejected correctly."""
+
+    def test_crear_con_identificador_duplicado_lanza_error(self, service, repo_mock, datos_validos):
+        repo_mock.obtener_por_identificador_externo.return_value = MagicMock(spec=Solicitud)
+
+        with pytest.raises(IdentificadorDuplicado):
+            service.crear(**datos_validos)
+
+    def test_no_guarda_si_identificador_duplicado(self, service, repo_mock, datos_validos):
+        repo_mock.obtener_por_identificador_externo.return_value = MagicMock(spec=Solicitud)
+
+        with pytest.raises(IdentificadorDuplicado):
+            service.crear(**datos_validos)
+
+        repo_mock.guardar.assert_not_called()
+
+    def test_segundo_registro_distinto_no_falla(self, service, repo_mock, datos_validos):
+        repo_mock.obtener_por_identificador_externo.return_value = None
+        repo_mock.guardar.side_effect = lambda s: s
+
+        datos_validos["identificador_externo"] = "EXT-UNIQUE-999"
+        resultado = service.crear(**datos_validos)
+
+        assert resultado.identificador_externo == "EXT-UNIQUE-999"
+
+
+class TestConsultaInexistente:
+    """Verifies behavior when querying records that do not exist."""
+
+    def test_obtener_registro_inexistente_lanza_error(self, service, repo_mock):
+        repo_mock.obtener_por_id.return_value = None
+        id_inexistente = uuid4()
+
+        with pytest.raises(SolicitudNoEncontrada) as exc_info:
+            service.obtener(id_inexistente)
+
+        assert str(id_inexistente) in str(exc_info.value)
+
+    def test_actualizar_estado_de_registro_inexistente_lanza_error(self, service, repo_mock):
+        repo_mock.obtener_por_id.return_value = None
+
+        with pytest.raises(SolicitudNoEncontrada):
+            service.actualizar_estado(uuid4(), Estado.COMPLETADA)
+
+        repo_mock.actualizar.assert_not_called()
