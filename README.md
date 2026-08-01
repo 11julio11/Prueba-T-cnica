@@ -64,7 +64,7 @@ PYTHONPATH=backend DATABASE_URL=postgresql://... pytest backend/tests -v
 | Domain entity | Auto-ID, UTC timestamps, initial state, state transitions |
 | Domain service | Create, get, list with filters, update state |
 | Duplicate handling | Rejects duplicates, does not persist |
-| Not-found records | Raises `SolicitudNoEncontrada` on get and update |
+| Not-found records | Raises `RequestNotFoundError` on get and update |
 | Health endpoints | `/health` always-up, `/health/ready` with mocked DB |
 
 ---
@@ -76,16 +76,16 @@ PYTHONPATH=backend DATABASE_URL=postgresql://... pytest backend/tests -v
 ```mermaid
 graph LR
     subgraph API ["API Layer (FastAPI)"]
-        R["Routers\n/solicitudes\n/health"]
+        R["Routers\n/requests\n/health"]
         S["Pydantic Schemas\nRequest / Response"]
         EH["Exception Handlers\nHTTP error mapping"]
         R --> S
     end
 
     subgraph DOMAIN ["Domain Layer (Pure Python)"]
-        SVC["SolicitudService\nBusiness Logic"]
-        ENT["Solicitud Entity\nValue Objects"]
-        PORT["SolicitudRepository\nAbstract Port"]
+        SVC["RequestService\nBusiness Logic"]
+        ENT["ServiceRequest Entity\nValue Objects"]
+        PORT["RequestRepository\nAbstract Port"]
         EXC["Domain Exceptions\nIdentificadorDuplicado\nSolicitudNoEncontrada"]
         SVC --> ENT
         SVC --> PORT
@@ -114,16 +114,16 @@ backend/
 └── app/
     ├── api/
     │   ├── v1/
-    │   │   ├── routers/        # FastAPI route handlers (solicitudes, health)
+    │   │   ├── routers/        # FastAPI route handlers (requests, health)
     │   │   └── schemas/        # Pydantic request/response models
     │   ├── dependencies.py     # Dependency injection (repository → service)
     │   └── exception_handlers.py  # Centralized HTTP error mapping
     ├── domain/
-    │   ├── entities/           # Solicitud entity (pure Python, no ORM)
-    │   ├── value_objects/      # Estado, Prioridad, TipoSolicitud enums
-    │   ├── ports/              # SolicitudRepository abstract interface
-    │   ├── services/           # Business logic (SolicitudService)
-    │   └── exceptions.py       # Domain exceptions (IdentificadorDuplicado, SolicitudNoEncontrada)
+    │   ├── entities/           # ServiceRequest entity (pure Python, no ORM)
+    │   ├── value_objects/      # Status, Priority, RequestType enums
+    │   ├── ports/              # RequestRepository abstract interface
+    │   ├── services/           # Business logic (RequestService)
+    │   └── exceptions.py       # Domain exceptions (DuplicateExternalIdError, RequestNotFoundError)
     ├── infrastructure/
     │   ├── database/
     │   │   ├── connection.py   # SQLAlchemy engine, session, health check
@@ -147,10 +147,10 @@ tests/
 |---|---|
 | **Hexagonal architecture** | Domain layer has zero infrastructure dependencies. Tests run without DB. |
 | **Alembic migrations** | Tracked, versioned, and run automatically at container startup via `entrypoint.sh`. |
-| **JSON structured logging** | Custom `JSONFormatter` emits `timestamp`, `level`, `service`, `method`, `endpoint`, `status_code`, `duration_ms`, `solicitud_id`. Compatible with CloudWatch, ELK, Datadog. |
+| **JSON structured logging** | Custom `JSONFormatter` emits `timestamp`, `level`, `service`, `method`, `endpoint`, `status_code`, `duration_ms`, `request_id`. Compatible with CloudWatch, ELK, Datadog. |
 | **No retry libraries in consumer** | Consumer uses `urllib` stdlib only — no external dependencies. Retry with exponential backoff + jitter implemented manually. |
-| **Unique constraint on `identificador_externo`** | Enforced at DB level (UNIQUE) and at service level (checked before insert). Handles concurrent requests safely. |
-| **Indexes** | Individual indexes on `estado`, `tipo`, `prioridad`, `identificador_externo` + composite index `(estado, tipo, prioridad)` for common filter queries. |
+| **Unique constraint on `external_id`** | Enforced at DB level (UNIQUE) and at service level (checked before insert). Handles concurrent requests safely. |
+| **Indexes** | Individual indexes on `status`, `type`, `priority`, `external_id` + composite index `(status, type, priority)` for common filter queries. |
 | **pydantic-settings** | All configuration from environment variables. No hardcoded secrets. |
 
 ---
@@ -159,20 +159,20 @@ tests/
 
 | Method | Route | Description |
 |---|---|---|
-| `POST` | `/api/v1/solicitudes` | Create a new request |
-| `GET` | `/api/v1/solicitudes` | List requests (filterable) |
-| `GET` | `/api/v1/solicitudes/{id}` | Get a specific request by UUID |
-| `PATCH` | `/api/v1/solicitudes/{id}/estado` | Update request status |
+| `POST` | `/api/v1/requests` | Create a new request |
+| `GET` | `/api/v1/requests` | List requests (filterable) |
+| `GET` | `/api/v1/requests/{id}` | Get a specific request by UUID |
+| `PATCH` | `/api/v1/requests/{id}/status` | Update request status |
 | `GET` | `/health` | API availability check |
 | `GET` | `/health/ready` | PostgreSQL connectivity check |
 
-### Filter parameters for `GET /api/v1/solicitudes`
+### Filter parameters for `GET /api/v1/requests`
 
 | Parameter | Values |
 |---|---|
-| `estado` | `recibida`, `en_proceso`, `completada`, `rechazada` |
-| `tipo` | `acceso_plataforma`, `soporte_tecnico`, `academica`, `administrativa` |
-| `prioridad` | `baja`, `media`, `alta` |
+| `status` | `received`, `in_progress`, `completed`, `rejected` |
+| `type` | `platform_access`, `technical_support`, `academic`, `administrative` |
+| `priority` | `low`, `medium`, `high` |
 | `limite` | 1–500 (default: 100) |
 | `offset` | ≥ 0 (default: 0) |
 
