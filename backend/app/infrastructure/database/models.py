@@ -30,7 +30,7 @@ class SolicitudModel(Base):
         index=True,
     )
     tipo: Mapped[TipoSolicitud] = mapped_column(
-        Enum(TipoSolicitud, name="tipo_solicitud_enum"),
+        Enum(TipoSolicitud, name="tipo_solicitud_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
     )
@@ -38,12 +38,12 @@ class SolicitudModel(Base):
     correo: Mapped[str] = mapped_column(String(254), nullable=False)
     descripcion: Mapped[str] = mapped_column(Text, nullable=False)
     prioridad: Mapped[Prioridad] = mapped_column(
-        Enum(Prioridad, name="prioridad_enum"),
+        Enum(Prioridad, name="prioridad_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
     )
     estado: Mapped[Estado] = mapped_column(
-        Enum(Estado, name="estado_enum"),
+        Enum(Estado, name="estado_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=Estado.RECIBIDA,
         index=True,
