@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from backend.infrastructure.database import get_db
 from backend.infrastructure.repositories import SolicitudeRepository
+from backend.domain.ports import ISolicitudeRepository
 from backend.domain.services import SolicitudeService
 from backend.domain.schemas import (
     SolicitudeCreate, 
@@ -16,7 +17,9 @@ router = APIRouter(prefix="/solicitudes", tags=["Solicitudes"])
 
 def get_solicitude_service(db: Session = Depends(get_db)) -> SolicitudeService:
     """Dependency injection for the domain service."""
-    repository = SolicitudeRepository(db)
+    # We instantiate the specific adapter (Infrastructure)
+    repository: ISolicitudeRepository = SolicitudeRepository(db)
+    # We inject it into the domain service that expects a port (Interface)
     return SolicitudeService(repository)
 
 @router.post("", response_model=SolicitudeResponse, status_code=status.HTTP_201_CREATED)

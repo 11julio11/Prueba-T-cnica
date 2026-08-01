@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import MagicMock
+from datetime import datetime
 from backend.domain.services import SolicitudeService
-from backend.domain.schemas import SolicitudeCreate, SolicitudeType, SolicitudePriority, SolicitudeStatus, SolicitudeUpdateStatus
-from backend.infrastructure.models import SolicitudeModel
+from backend.domain.schemas import SolicitudeCreate, SolicitudeType, SolicitudePriority, SolicitudeStatus, SolicitudeUpdateStatus, SolicitudeResponse
 
 @pytest.fixture
 def mock_repository():
@@ -23,12 +23,19 @@ def test_create_solicitude_uses_repository(solicitude_service, mock_repository):
         priority=SolicitudePriority.HIGH
     )
     
-    mock_model = SolicitudeModel(
+    mock_domain_entity = SolicitudeResponse(
         id=1,
         external_id="EXT-123",
-        status=SolicitudeStatus.RECEIVED
+        request_type=SolicitudeType.ACADEMIC,
+        requester_name="John Doe",
+        email="john@example.com",
+        description="I need help with my classes",
+        priority=SolicitudePriority.HIGH,
+        status=SolicitudeStatus.RECEIVED,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
     )
-    mock_repository.create.return_value = mock_model
+    mock_repository.create.return_value = mock_domain_entity
     
     # Act
     result = solicitude_service.create_solicitude(solicitude_data)
@@ -41,15 +48,27 @@ def test_create_solicitude_uses_repository(solicitude_service, mock_repository):
 def test_update_solicitude_status_prevents_completed_transition(solicitude_service, mock_repository):
     # Arrange
     solicitude_id = 1
-    # Mocking the repository to return a COMPLETED solicitude
-    existing_solicitude = SolicitudeModel(id=solicitude_id, status=SolicitudeStatus.COMPLETED)
+    
+    # Mocking the repository to return a COMPLETED domain entity
+    existing_solicitude = SolicitudeResponse(
+        id=solicitude_id,
+        external_id="EXT-123",
+        request_type=SolicitudeType.ACADEMIC,
+        requester_name="John Doe",
+        email="john@example.com",
+        description="I need help with my classes",
+        priority=SolicitudePriority.HIGH,
+        status=SolicitudeStatus.COMPLETED,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
+    )
     mock_repository.get_by_id.return_value = existing_solicitude
     
     status_update = SolicitudeUpdateStatus(status=SolicitudeStatus.IN_PROGRESS)
     
-    # In this test we just verify the current logic which passes it to the repo,
-    # but in a stricter DDD scenario, the service could raise an exception here.
-    mock_repository.update_status.return_value = SolicitudeModel(id=1, status=SolicitudeStatus.IN_PROGRESS)
+    # In a stricter DDD scenario, the service could raise an exception here.
+    updated_solicitude = existing_solicitude.model_copy(update={"status": SolicitudeStatus.IN_PROGRESS})
+    mock_repository.update_status.return_value = updated_solicitude
     
     # Act
     result = solicitude_service.update_solicitude_status(solicitude_id, status_update)

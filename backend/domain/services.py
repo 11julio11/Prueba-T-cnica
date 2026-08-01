@@ -1,4 +1,4 @@
-from backend.infrastructure.repositories import SolicitudeRepository
+from backend.domain.ports import ISolicitudeRepository
 from backend.domain.schemas import (
     SolicitudeCreate,
     SolicitudeUpdateStatus,
@@ -7,17 +7,16 @@ from backend.domain.schemas import (
     SolicitudePriority,
     SolicitudeResponse
 )
-from backend.infrastructure.models import SolicitudeModel
 
 class SolicitudeService:
     """
     Service layer containing the core business logic.
     Decouples the API from the database repository.
     """
-    def __init__(self, repository: SolicitudeRepository):
+    def __init__(self, repository: ISolicitudeRepository):
         self.repository = repository
 
-    def create_solicitude(self, solicitude_data: SolicitudeCreate) -> SolicitudeModel:
+    def create_solicitude(self, solicitude_data: SolicitudeCreate) -> SolicitudeResponse:
         """
         Business rules for creating a new solicitude.
         - Ensure new solicitudes always start as RECEIVED.
@@ -32,7 +31,7 @@ class SolicitudeService:
         status: SolicitudeStatus | None = None, 
         request_type: SolicitudeType | None = None, 
         priority: SolicitudePriority | None = None
-    ) -> list[SolicitudeModel]:
+    ) -> list[SolicitudeResponse]:
         """
         Retrieve all solicitudes applying optional filters.
         """
@@ -42,7 +41,7 @@ class SolicitudeService:
             priority=priority
         )
 
-    def get_solicitude_by_id(self, solicitude_id: int) -> SolicitudeModel:
+    def get_solicitude_by_id(self, solicitude_id: int) -> SolicitudeResponse:
         """
         Retrieve a single solicitude by its ID.
         """
@@ -50,7 +49,7 @@ class SolicitudeService:
         # that logic would be validated here before returning.
         return self.repository.get_by_id(solicitude_id)
 
-    def update_solicitude_status(self, solicitude_id: int, status_update: SolicitudeUpdateStatus) -> SolicitudeModel:
+    def update_solicitude_status(self, solicitude_id: int, status_update: SolicitudeUpdateStatus) -> SolicitudeResponse:
         """
         Business rules for updating status.
         - Fetch existing solicitude to ensure it exists.
