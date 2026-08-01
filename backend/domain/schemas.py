@@ -25,21 +25,12 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 class SolicitudeCreate(BaseModel):
     """Schema for creating a new solicitude."""
-    external_id: str = Field(..., description="Cédula o identificador único del sistema de origen")
+    external_id: str = Field(..., description="Unique identifier from the origin system")
     request_type: SolicitudeType
     requester_name: str = Field(..., min_length=2)
     email: EmailStr
     description: str = Field(..., min_length=10)
     priority: SolicitudePriority
-
-    @field_validator('external_id')
-    @classmethod
-    def validate_cedula(cls, v: str) -> str:
-        """Validates that external_id has a valid format (e.g., Cédula format)"""
-        # Emulando una regla de Value Object: Sólo números, entre 8 y 10 dígitos.
-        if not re.match(r'^\d{8,10}$', v):
-            raise ValueError('La cédula (external_id) debe contener entre 8 y 10 dígitos numéricos.')
-        return v
 
 class SolicitudeUpdateStatus(BaseModel):
     """Schema for updating the status of an existing solicitude."""

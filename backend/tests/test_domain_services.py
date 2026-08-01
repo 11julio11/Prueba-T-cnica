@@ -12,10 +12,10 @@ def fake_repository():
 def solicitude_service(fake_repository):
     return SolicitudeService(repository=fake_repository)
 
-def test_create_solicitude_valid_cedula(solicitude_service, fake_repository):
-    # Arrange (Positive case)
+def test_create_solicitude_uses_repository(solicitude_service, fake_repository):
+    # Arrange
     solicitude_data = SolicitudeCreate(
-        external_id="12345678", # Valid cedula
+        external_id="EXT-123",
         request_type=SolicitudeType.ACADEMIC,
         requester_name="John Doe",
         email="john@example.com",
@@ -29,24 +29,10 @@ def test_create_solicitude_valid_cedula(solicitude_service, fake_repository):
     # Assert
     # Check that it exists in the fake repo
     saved = fake_repository.get_by_id(result.id)
-    assert saved.external_id == "12345678"
+    assert saved.external_id == "EXT-123"
     assert result.id == 1
-    assert result.external_id == "12345678"
+    assert result.external_id == "EXT-123"
     assert result.status == SolicitudeStatus.RECEIVED
-
-def test_create_solicitude_invalid_cedula():
-    # Arrange & Act & Assert (Negative case: Domain validation)
-    from pydantic import ValidationError
-    with pytest.raises(ValidationError) as exc_info:
-        SolicitudeCreate(
-            external_id="ABC123", # Invalid cedula
-            request_type=SolicitudeType.ACADEMIC,
-            requester_name="John Doe",
-            email="john@example.com",
-            description="I need help with my classes",
-            priority=SolicitudePriority.HIGH
-        )
-    assert "La cédula (external_id) debe contener entre 8 y 10 dígitos numéricos." in str(exc_info.value)
 
 def test_update_solicitude_status_prevents_completed_transition(solicitude_service, fake_repository):
     # Arrange
