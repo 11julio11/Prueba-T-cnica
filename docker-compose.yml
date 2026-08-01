@@ -1,104 +1,68 @@
-version: '3.8'
-
 services:
+
+  # ── Base de datos ────────────────────────────────────────────────────────────
   db:
-    image: postgres:15-alpine
-    container_name: solicitudes_db
+    image: postgres:16-alpine
+    container_name: solicitudes-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
-      POSTGRES_DB: ${POSTGRES_DB:-solicitudes_db}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-solicitudes_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ── Backend ──────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: solicitudes-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DEBUG: ${DEBUG:-false}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - backend_net
+      start_period: 20s
 
-  # NODO 1 - Servicio de Solicitudes
-  solicitudes_api_1:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: solicitudes_api_1
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-admin}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secret}
-      - POSTGRES_DB=${POSTGRES_DB:-solicitudes_db}
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - ENVIRONMENT=${ENVIRONMENT:-development}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    volumes:
-      - ./backend:/app
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - backend_net
-
-  # NODO 2 - Servicio de Solicitudes
-  solicitudes_api_2:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: solicitudes_api_2
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-admin}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secret}
-      - POSTGRES_DB=${POSTGRES_DB:-solicitudes_db}
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - ENVIRONMENT=${ENVIRONMENT:-development}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    volumes:
-      - ./backend:/app
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - backend_net
-
-  # LOAD BALANCER (Nginx simulando ALB/API Gateway)
-  nginx:
-    image: nginx:alpine
-    container_name: solicitudes_load_balancer
-    ports:
-      - "${API_PORT:-8000}:8000"
-    command: >
-      /bin/sh -c "echo 'events { worker_connections 1024; } http { upstream api_servers { server solicitudes_api_1:8000; server solicitudes_api_2:8000; } server { listen 8000; location / { proxy_pass http://api_servers; proxy_set_header Host $$host; proxy_set_header X-Real-IP $$remote_addr; proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for; } } }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
-    depends_on:
-      - solicitudes_api_1
-      - solicitudes_api_2
-    networks:
-      - backend_net
-
-  # CONSUMIDOR
+  # ── Consumidor ───────────────────────────────────────────────────────────────
   consumer:
     build:
       context: ./consumer
       dockerfile: Dockerfile
-    container_name: solicitudes_consumer
+    container_name: solicitudes-consumer
     environment:
-      - API_URL=http://nginx:8000 
-      - CONSUMER_RETRIES=${CONSUMER_RETRIES:-3}
-      - CONSUMER_TIMEOUT=${CONSUMER_TIMEOUT:-5}
-    volumes:
-      - ./consumer:/app
+      API_BASE_URL: http://backend:8000/api/v1
+      MAX_ATTEMPTS: ${MAX_ATTEMPTS:-5}
+      BASE_DELAY_S: ${BASE_DELAY_S:-1.0}
+      MAX_DELAY_S: ${MAX_DELAY_S:-30.0}
+      TIMEOUT_S: ${TIMEOUT_S:-10.0}
+      STARTUP_WAIT_S: ${STARTUP_WAIT_S:-5.0}
     depends_on:
-      - nginx
-    networks:
-      - backend_net
+      backend:
+        condition: service_healthy
+    restart: "no"
 
 volumes:
   postgres_data:
-
-networks:
-  backend_net:
-    driver: bridge
+    driver: local
