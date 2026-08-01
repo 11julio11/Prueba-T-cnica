@@ -5,8 +5,6 @@ Verifies availability and DB readiness checks without a real DB.
 import os
 from unittest.mock import patch
 
-import pytest
-
 # Inject required env vars before importing anything from app
 os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost/test")
 

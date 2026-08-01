@@ -1,5 +1,3 @@
-from datetime import timezone
-
 import pytest
 
 from app.domain.entities.service_request import ServiceRequest
