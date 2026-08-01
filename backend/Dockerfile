@@ -1,7 +1,6 @@
 FROM python:3.12-slim
 
 # Metadatos
-LABEL maintainer="David Julio <david@example.com>"
 LABEL description="API de gestión de solicitudes institucionales"
 
 # Variables de entorno para Python
@@ -28,7 +27,8 @@ COPY . .
 
 # Script de entrada que corre migraciones y luego levanta el servidor
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Strip Windows CRLF line endings so the shebang works on Linux
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 EXPOSE 8000
 
