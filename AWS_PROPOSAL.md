@@ -2,89 +2,167 @@
 
 ## 1. Flujograma de Arquitectura
 
-De acuerdo a los lineamientos requeridos, la arquitectura sigue un modelo estricto de separación de responsabilidades y redes (VPC), integrando el nuevo servicio dentro del ecosistema existente.
+La arquitectura sigue un modelo estricto de separación de responsabilidades y redes (VPC), integrando el nuevo microservicio de solicitudes dentro del ecosistema existente que ya cuenta con un frontend y otros servicios backend.
 
 ```mermaid
 graph TD
-    User([Usuario]) --> Frontend
-    Frontend -->|HTTPS + Token JWT| WAF[DNS / WAF]
-    WAF --> ALB[Application Load Balancer]
-    
-    subgraph "VPC - Capa Pública (Subnets Públicas)"
+    User([Usuario]) -->|HTTPS| Frontend[Frontend - S3 + CloudFront]
+    Frontend -->|HTTPS + JWT| Route53[Route 53 - DNS]
+    Route53 --> WAF[AWS WAF]
+    WAF --> ALB[Application Load Balancer HTTPS :443]
+
+    subgraph "VPC - Subnets Públicas"
         ALB
     end
-    
-    subgraph "VPC - Capa Privada (Subnets Privadas aisladas de Internet)"
-        SvcSolicitudes[Microservicio de Solicitudes]
-        SvcUsuarios[Microservicio de Usuarios - Existente]
-        Others[Otros microservicios]
-        
-        ALB -->|Enrutamiento por Path: /solicitudes| SvcSolicitudes
-        ALB -->|Enrutamiento por Path: /usuarios| SvcUsuarios
-        ALB -->|Enrutamiento por Path| Others
-        
-        SvcSolicitudes --> DB[(PostgreSQL privado)]
+
+    subgraph "VPC - Subnets Privadas"
+        SvcSolicitudes["Microservicio de Solicitudes<br/>(ECS Fargate)"]
+        SvcUsuarios["Microservicio de Usuarios - Existente<br/>(ECS Fargate)"]
+        Others["Otros microservicios<br/>(ECS Fargate)"]
+
+        ALB -->|Path: /api/v1/solicitudes| SvcSolicitudes
+        ALB -->|Path: /api/v1/usuarios| SvcUsuarios
+        ALB -->|Path: /api/v1/...| Others
+
+        SvcSolicitudes --> DB[(Amazon RDS PostgreSQL - Multi-AZ)]
         SvcUsuarios --> DB
     end
-    
-    subgraph "AWS Ecosystem (Servicios Administrados)"
-        Secrets[Gestión de secretos - AWS Secrets Manager]
-        Logs[Logs, métricas y alertas - AWS CloudWatch]
-        Trace[Trazabilidad - AWS X-Ray]
-        
-        SvcSolicitudes -.-> Secrets
-        SvcSolicitudes -.-> Logs
-        SvcSolicitudes -.-> Trace
-        
-        SvcUsuarios -.-> Secrets
-        SvcUsuarios -.-> Logs
-        SvcUsuarios -.-> Trace
+
+    subgraph "AWS Servicios Administrados"
+        Secrets[AWS Secrets Manager]
+        Logs[Amazon CloudWatch Logs]
+        Trace[AWS X-Ray]
+        ECR[Amazon ECR]
+        Cognito[Amazon Cognito]
+
+        SvcSolicitudes -..-> Secrets
+        SvcSolicitudes -..-> Logs
+        SvcSolicitudes -..-> Trace
+        SvcUsuarios -..-> Secrets
+        SvcUsuarios -..-> Logs
     end
 ```
 
 ---
 
-## 2. Servicios de AWS Seleccionados y Justificación
+## 2. Servicios AWS Seleccionados y Justificación
 
 ### Ejecución y Almacenamiento de Contenedores
-- **Amazon ECR (Elastic Container Registry):** Se utilizará para almacenar las imágenes Docker generadas en el pipeline CI/CD. Es privado, encriptado e integrado nativamente con IAM y ECS.
-- **Amazon ECS con AWS Fargate:** Los servicios se ejecutarán en Fargate (Serverless Compute para contenedores).
-  - *Justificación:* No administramos instancias EC2. Pagamos solo por los recursos (vCPU/RAM) que consumen los contenedores y facilita el auto-escalado horizontal basado en carga.
 
-### Punto de Entrada y Enrutamiento (ALB y WAF)
-- **Application Load Balancer (ALB):** Actuará como punto único de entrada.
-  - *Configuración:* Tendrá un **Listener en el puerto 443 (HTTPS)** con un certificado SSL/TLS gestionado por **AWS Certificate Manager (ACM)**.
-  - *Target Groups:* Se configurará un Target Group por cada microservicio. Los *Health Checks* apuntarán al endpoint `/health` de cada API. Si Fargate levanta un contenedor y falla el health check, el ALB no le envía tráfico.
-  - *Enrutamiento:* Reglas de Path-based routing. Ej: Tráfico a `/solicitudes/*` va al Target Group del **Microservicio de Solicitudes**.
-- **AWS WAF (Web Application Firewall):** Asociado al ALB.
-  - *Problema que resuelve:* Configuración de **Rate Limiting** (ej. máximo 500 peticiones por minuto por IP) y protección contra inyecciones SQL/XSS, bloqueando tráfico malicioso antes de que golpee al balanceador.
+**Amazon ECR (Elastic Container Registry)**
+Las imágenes Docker del backend y del consumidor se almacenan en ECR. Es privado, encriptado con KMS y tiene integración nativa con IAM y ECS. El pipeline CI/CD (GitHub Actions) hace `docker build`, `docker push` a ECR y luego actualiza el servicio ECS.
 
-### Segmentación de Red y Reglas de Acceso (Security Groups)
-La arquitectura se despliega en una **VPC (Virtual Private Cloud)** con segmentación estricta:
-1. **ALB (Capa Pública):** 
-   - *Security Group:* Permite tráfico entrante (Inbound) SOLO en puerto 443 (HTTPS) desde cualquier IP `0.0.0.0/0`.
-2. **Servicios Backend ECS (Capa Privada):**
-   - *Restricción:* NO tienen IP pública. No son accesibles desde Internet.
-   - *Security Group:* Permite Inbound SOLO en puerto 8000 proveniente **exclusivamente del Security Group del ALB**. 
-3. **Amazon RDS PostgreSQL (Capa de Datos Privada):**
-   - *Restricción:* Completamente aislado.
-   - *Security Group:* Permite Inbound SOLO en puerto 5432 proveniente **exclusivamente de los Security Groups de los servicios Backend** que lo requieran (Aplicando el Principio de Mínimo Privilegio a nivel red).
+**Amazon ECS con AWS Fargate**
+Los servicios corren en Fargate (serverless compute para contenedores). No se administran instancias EC2. Se paga solo por vCPU/RAM consumidos por cada task. El auto-escalado horizontal se configura con Application Auto Scaling basado en CPU promedio o número de peticiones concurrentes en el Target Group del ALB.
+
+---
+
+### Punto de Entrada — ALB, WAF y DNS
+
+**AWS Route 53**
+Maneja el DNS del dominio. Redirige el tráfico al ALB mediante un alias record. Soporta health checks propios para failover geográfico si se requiere en el futuro.
+
+**AWS WAF (Web Application Firewall)**
+Asociado al ALB. Resuelve dos problemas concretos:
+- **Rate Limiting:** máximo N peticiones por IP por minuto. Bloquea bots y ataques de fuerza bruta.
+- **Protección OWASP:** reglas administradas contra SQLi, XSS y otras vulnerabilidades, sin escribir una sola línea de código en el backend.
+
+**Application Load Balancer (ALB)**
+Actúa como único punto de entrada público.
+- **Listener en el puerto 443 (HTTPS):** el certificado SSL/TLS está gestionado por AWS Certificate Manager (ACM), renovación automática.
+- **Listener en el puerto 80:** redirige permanentemente (301) a HTTPS.
+- **Target Groups:** uno por microservicio. Los health checks apuntan al endpoint `/health` de cada API. Si un contenedor no responde `200 OK`, el ALB no le envía tráfico hasta que se recupere.
+- **Enrutamiento por Path:** `/api/v1/solicitudes/*` → Target Group del microservicio de solicitudes. `/api/v1/usuarios/*` → Target Group del microservicio de usuarios. Permite agregar nuevos servicios sin cambiar los existentes.
+
+---
+
+### Segmentación de Red y Security Groups
+
+La VPC tiene cuatro tipos de subnets:
+
+| Subnet | Qué vive ahí | Reglas de entrada |
+|---|---|---|
+| Pública | ALB | Solo puerto 443 desde `0.0.0.0/0` |
+| Privada - Aplicación | ECS Tasks (todos los servicios) | Solo desde el Security Group del ALB, en el puerto de la app (8000) |
+| Privada - Datos | Amazon RDS PostgreSQL | Solo desde los Security Groups de los servicios que necesitan DB, en puerto 5432 |
+| Privada - Gestión | AWS Secrets Manager (endpoint VPC) | Solo desde los Security Groups de los servicios autorizados |
+
+RDS nunca tiene IP pública. Los servicios ECS nunca tienen IP pública. Solo el ALB está en la subnet pública.
+
+---
 
 ### Autenticación y Autorización
-- **Usuarios desde Frontend:** Se utilizará **Amazon Cognito** (u otro IdP) para generar tokens JWT. El frontend adjunta el token en el header `Authorization`.
-- **Validación en Backend:** La validación real del JWT recae sobre el código de cada servicio backend (FastAPI Dependency), garantizando que *la autorización se valide en cada servicio* según el requerimiento. (Alternativamente, el ALB puede configurarse con autenticación OIDC para filtrar tokens antes de rutarlos, pero el backend igual debe verificar los scopes/permisos de ese usuario).
-- **Autenticación entre servicios (M2M):** Si el Microservicio de Solicitudes necesita hablar con otros microservicios, se pueden utilizar tokens firmados internamente (M2M tokens) o aprovechar **AWS App Mesh** (Service Mesh) para establecer mTLS (Mutual TLS) automático entre contenedores.
 
-### Gestión de Secretos, Logs y Trazabilidad
-- **AWS Secrets Manager:** 
-  - *Justificación:* Las credenciales (usuario/password de DB) **jamás** se exponen en variables de entorno fijas ni en imágenes. La definición de la tarea (Task Definition) de ECS inyectará los secretos dinámicamente desde Secrets Manager como variables de entorno al contenedor en tiempo de ejecución. Solo el rol IAM del servicio tiene permiso (`secretsmanager:GetSecretValue`) para leer su propio secreto (Mínimo Privilegio).
-- **Amazon CloudWatch:**
-  - *Logs:* Los logs estructurados en JSON que escupe el contenedor son enviados a **CloudWatch Logs** mediante el log driver `awslogs`. Al ser JSON, podemos crear consultas (Log Insights), métricas y generar alertas (Alarmas de SNS) si se detectan errores `ERROR` recurrentes.
-- **AWS X-Ray:** 
-  - *Trazabilidad:* Se instrumenta el SDK en Python para que un `trace_id` viaje a través de todas las peticiones, permitiendo ver gráficamente cuánto tardó el ALB, cuánto tardó el backend y cuánto tardó la query a PostgreSQL.
+**Usuarios desde el Frontend**
+El frontend autentica usuarios contra **Amazon Cognito** (User Pool), que emite tokens JWT (id token + access token). El frontend adjunta el access token en el header `Authorization: Bearer <token>`.
 
-### Estrategia de Escalabilidad, Despliegue y Reversión
-- **Escalabilidad (Application Auto Scaling):** Se configuran políticas de escalado para que ECS añada nuevos contenedores (tasks) si el uso de CPU promedio supera el 70% o si la cantidad de peticiones concurrentes por contenedor aumenta (ALB Request Count).
-- **Despliegue (Rolling Update):** En un CI/CD (ej. GitHub Actions -> ECS), el despliegue es "Rolling". ECS levanta un nuevo contenedor con la v2. El ALB le hace Health Check. Solo si devuelve `200 OK`, el ALB redirige tráfico allí y luego mata la v1. 
-- **Reversión de Versiones (Rollback):** Si la v2 está rota y falla el health check, ECS cancela automáticamente el despliegue y mantiene intacta la v1, garantizando **Zero Downtime**.
-- **CORS:** Manejado directamente a nivel de código en el backend (FastAPI CORSMiddleware), permitiendo solo el origen (Origin) del Frontend oficial.
+Validación en dos capas:
+1. **ALB** puede configurarse con autenticación OIDC para rechazar peticiones sin token válido antes de que lleguen al backend (capa de defensa perimetral).
+2. **Cada servicio FastAPI** valida el token en un `Depends()`, verificando la firma, el `exp`, el `aud` y los scopes del usuario. La autorización **siempre se valida en el servicio**, no se confía solo en el ALB.
+
+**Comunicación entre servicios (M2M)**
+Los microservicios internos se comunican usando tokens M2M de **Cognito (Client Credentials flow)** o mediante IAM Task Roles con permisos mínimos. No hay credenciales hardcodeadas. Se puede escalar a **AWS App Mesh + mTLS** si la complejidad del ecosistema lo justifica.
+
+---
+
+### Gestión de Secretos
+
+**AWS Secrets Manager**
+Las credenciales de la base de datos (`POSTGRES_PASSWORD`, `DATABASE_URL`) y otros secretos **jamás se almacenan** en el código, en imágenes Docker ni en variables de entorno estáticas de la Task Definition.
+
+Funcionamiento:
+1. En la Task Definition de ECS, se referencia el ARN del secreto en Secrets Manager.
+2. Al arrancar el contenedor, ECS inyecta el secreto como variable de entorno en tiempo de ejecución.
+3. Solo el IAM Task Role del servicio tiene permiso `secretsmanager:GetSecretValue` para su propio secreto (mínimo privilegio).
+4. La rotación de credenciales se puede automatizar desde Secrets Manager sin redeploy del servicio.
+
+---
+
+### Observabilidad: Logs, Métricas y Trazabilidad
+
+**Amazon CloudWatch Logs**
+Los contenedores emiten logs estructurados en JSON (ya implementado en el backend con `JSONFormatter`). ECS usa el log driver `awslogs` para enviarlos a CloudWatch Logs automáticamente. Al ser JSON, se pueden construir:
+- **Log Insights queries** para buscar por `solicitud_id`, `status_code` o `duration_ms`.
+- **Métricas personalizadas** derivadas de logs (ej: tasa de errores 5xx).
+- **CloudWatch Alarms** que disparan notificaciones SNS si el error rate supera un umbral.
+
+**AWS X-Ray**
+Se integra el SDK de Python (`aws-xray-sdk`) en el backend FastAPI. Cada petición genera un `trace_id` que viaja a través de ALB → Backend → RDS, permitiendo ver visualmente cuánto tiempo tomó cada segmento y dónde está el cuello de botella.
+
+---
+
+### Escalabilidad, Despliegue y Reversión
+
+**Application Auto Scaling**
+Se configura una política de escalado que agrega nuevas tasks ECS si:
+- CPU promedio del servicio supera el 70%.
+- Request count por task en el ALB supera un umbral definido.
+
+El escalado es horizontal (más contenedores), sin downtime.
+
+**CI/CD con Rolling Deployment (GitHub Actions → ECS)**
+1. `pytest` corre en la pipeline; si falla, el deploy se cancela.
+2. Se construye la imagen Docker y se pushea a ECR con un tag de Git SHA.
+3. Se actualiza la Task Definition de ECS con la nueva imagen.
+4. ECS hace un rolling update: levanta un contenedor nuevo, el ALB verifica el `/health`, y solo si responde `200 OK` se elimina el contenedor viejo.
+
+**Rollback Automático**
+Si el health check del nuevo contenedor falla durante el rolling update, ECS cancela automáticamente el deployment y mantiene la versión anterior corriendo. Zero downtime garantizado.
+
+**CORS**
+Configurado en el backend (`CORSMiddleware`) restringiendo `allow_origins` al dominio oficial del frontend en producción. No se acepta `*` en producción.
+
+---
+
+## 3. Restricciones Cumplidas
+
+| Restricción | Solución |
+|---|---|
+| Backend y PostgreSQL no expuestos a Internet | Subnets privadas sin IP pública; solo el ALB en subnet pública |
+| Acceso público solo por HTTPS | Listener 443 con ACM; listener 80 redirige a HTTPS |
+| PostgreSQL en red privada | RDS en subnet de datos; Security Group solo acepta desde backend |
+| Autorización validada en cada servicio | FastAPI `Depends()` valida JWT en cada endpoint |
+| Credenciales fuera del código e imágenes | AWS Secrets Manager + IAM Task Roles |
+| Mínimo privilegio por servicio | IAM Task Role por servicio con permisos específicos (solo su secreto, solo su log group) |
+| Arquitectura extensible | Agregar servicio = nuevo Target Group en ALB + nueva Task Definition. Sin cambiar los servicios existentes. |
+| Logs centralizados y solicitudes trazables | CloudWatch Logs + X-Ray trace ID por petición |
