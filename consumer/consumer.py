@@ -1,9 +1,9 @@
 """
-Consumidor de la API de solicitudes.
-- Envía solicitudes con retry exponencial
-- No reintenta errores 4xx (definitivos)
-- Sí reintenta errores 5xx y de conexión (temporales)
-- Logs estructurados en JSON
+Requests API consumer.
+- Sends requests with exponential retry
+- Does not retry 4xx errors (definitive)
+- Retries 5xx and connection errors (temporary)
+- JSON structured logs
 """
 import json
 import logging
@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 
-# ── Logging estructurado JSON ─────────────────────────────────────────────────
+# ── Structured JSON logging ─────────────────────────────────────────────────
 
 class JSONFormatter(logging.Formatter):
     SERVICE = "solicitudes-consumer"
@@ -52,7 +52,7 @@ logging.basicConfig(level=logging.INFO, handlers=[handler])
 log = logging.getLogger("consumer")
 
 
-# ── Configuración ─────────────────────────────────────────────────────────────
+# ── Configuration ─────────────────────────────────────────────────────────────
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://backend:8000/api/v1")
 MAX_ATTEMPTS = int(os.getenv("MAX_ATTEMPTS", "5"))
@@ -62,7 +62,7 @@ TIMEOUT_S = float(os.getenv("TIMEOUT_S", "10.0"))
 STARTUP_WAIT_S = float(os.getenv("STARTUP_WAIT_S", "5.0"))
 
 
-# ── Solicitudes de ejemplo ────────────────────────────────────────────────────
+# ── Example requests ────────────────────────────────────────────────────
 
 SOLICITUDES: list[dict] = [
     {
@@ -105,19 +105,19 @@ SOLICITUDES: list[dict] = [
         "descripcion": "El computador del laboratorio 3 no enciende desde el martes en la tarde",
         "prioridad": "media",
     },
-    # Solicitud intencionalmente inválida para probar manejo de errores 4xx
+    # Intentionally invalid request to test 4xx error handling
     {
         "identificador_externo": "CONS-ERR",
-        "tipo": "tipo_invalido",          # valor de catálogo inexistente
+        "tipo": "tipo_invalido",          # non-existent catalog value
         "nombre_solicitante": "Test Error",
-        "correo": "no-es-correo",          # correo inválido
-        "descripcion": "Prueba de error",
-        "prioridad": "urgente",            # prioridad inexistente
+        "correo": "no-es-correo",          # invalid email
+        "descripcion": "Error test",
+        "prioridad": "urgente",            # non-existent priority
     },
 ]
 
 
-# ── HTTP simple sin dependencias externas ─────────────────────────────────────
+# ── Simple HTTP without external dependencies ─────────────────────────────────────
 
 import urllib.request
 import urllib.error
@@ -153,17 +153,17 @@ def http_get(url: str, timeout: float) -> tuple[int, dict]:
         return e.code, body
 
 
-# ── Lógica de retry ───────────────────────────────────────────────────────────
+# ── Retry logic ───────────────────────────────────────────────────────────
 
 def _is_retryable(status_code: Optional[int]) -> bool:
-    """5xx y None (error de conexión) son temporales → reintentar."""
+    """5xx and None (connection error) are temporary → retry."""
     if status_code is None:
         return True
     return status_code >= 500
 
 
 def _backoff_delay(attempt: int) -> float:
-    """Delay exponencial con jitter: min(base * 2^attempt + jitter, max)."""
+    """Exponential delay with jitter: min(base * 2^attempt + jitter, max)."""
     delay = BASE_DELAY_S * (2 ** attempt) + random.uniform(0, 1)
     return min(delay, MAX_DELAY_S)
 
@@ -198,7 +198,7 @@ def post_con_retry(
                 )
                 return body
 
-            # Error 4xx → definitivo, no reintentar
+            # 4xx Error → definitive, do not retry
             if 400 <= status_code < 500:
                 log.warning(
                     "Error definitivo (4xx), no se reintentará",
@@ -215,7 +215,7 @@ def post_con_retry(
 
             # Error 5xx → temporal, reintentar
             log.warning(
-                "Error temporal (5xx), reintentando",
+                "Temporary error (5xx), retrying",
                 extra={
                     "identificador_externo": identificador,
                     "attempt": attempt,
@@ -228,7 +228,7 @@ def post_con_retry(
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             duration = int((time.perf_counter() - start) * 1000)
             log.warning(
-                "Error de conexión, reintentando",
+                "Connection error, retrying",
                 extra={
                     "identificador_externo": identificador,
                     "attempt": attempt,
@@ -261,10 +261,10 @@ def post_con_retry(
     return None
 
 
-# ── Flujo principal ───────────────────────────────────────────────────────────
+# ── Main flow ───────────────────────────────────────────────────────────
 
 def esperar_backend() -> None:
-    """Espera activa hasta que el backend responda en /health."""
+    """Active wait until backend responds on /health."""
     health_url = f"{API_BASE_URL.replace('/api/v1', '')}/health"
     log.info("Esperando que el backend esté disponible", extra={"endpoint": health_url})
 
@@ -321,7 +321,7 @@ def main() -> None:
     url_crear = f"{API_BASE_URL}/solicitudes"
     resultados: list[dict] = []
 
-    # ── Fase 1: crear todas las solicitudes ──────────────────────────────────
+    # ── Phase 1: create all requests ──────────────────────────────────
     log.info(f"Iniciando creación de {len(SOLICITUDES)} solicitudes")
 
     for solicitud in SOLICITUDES:
@@ -336,7 +336,7 @@ def main() -> None:
         extra={"creadas": len(resultados), "fallidas": len(SOLICITUDES) - len(resultados)},
     )
 
-    # ── Fase 2: consultar estado de las creadas ───────────────────────────────
+    # ── Phase 2: check status of created ones ───────────────────────────────
     if resultados:
         log.info("Consultando estado de solicitudes creadas")
         time.sleep(2)

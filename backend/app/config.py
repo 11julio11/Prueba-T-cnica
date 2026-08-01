@@ -2,18 +2,18 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # Base de datos
+    # Database
     database_url: str
     db_pool_size: int = 5
     db_max_overflow: int = 10
 
-    # Aplicación
-    app_name: str = "Gestión de Solicitudes"
+    # Application
+    app_name: str = "Requests Management"
     app_version: str = "1.0.0"
     debug: bool = False
     log_level: str = "INFO"
 
-    # Servidor
+    # Server
     host: str = "0.0.0.0"
     port: int = 8000
 
