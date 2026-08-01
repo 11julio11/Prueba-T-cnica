@@ -71,9 +71,45 @@ PYTHONPATH=backend DATABASE_URL=postgresql://... pytest backend/tests -v
 
 ## 📐 Architecture & Technical Decisions
 
+### Layer Diagram
+
+```mermaid
+graph LR
+    subgraph API ["API Layer (FastAPI)"]
+        R["Routers\n/solicitudes\n/health"]
+        S["Pydantic Schemas\nRequest / Response"]
+        EH["Exception Handlers\nHTTP error mapping"]
+        R --> S
+    end
+
+    subgraph DOMAIN ["Domain Layer (Pure Python)"]
+        SVC["SolicitudService\nBusiness Logic"]
+        ENT["Solicitud Entity\nValue Objects"]
+        PORT["SolicitudRepository\nAbstract Port"]
+        EXC["Domain Exceptions\nIdentificadorDuplicado\nSolicitudNoEncontrada"]
+        SVC --> ENT
+        SVC --> PORT
+        SVC --> EXC
+    end
+
+    subgraph INFRA ["Infrastructure Layer (SQLAlchemy)"]
+        REPO["Repository Impl\nPostgreSQL queries"]
+        MAPPER["Mapper\nORM ↔ Entity"]
+        MODEL["SQLAlchemy Model\nSolicitudModel"]
+        CONN["DB Connection\nEngine / Session"]
+        LOG["JSON Logger\nTimingContext"]
+        REPO --> MAPPER
+        MAPPER --> MODEL
+        REPO --> CONN
+    end
+
+    R -->|"Depends()"| SVC
+    PORT -.->|"implemented by"| REPO
+```
+
 ### Layer Structure
 
-```
+```text
 backend/
 └── app/
     ├── api/

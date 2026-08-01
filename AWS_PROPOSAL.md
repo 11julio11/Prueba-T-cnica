@@ -6,41 +6,44 @@ La arquitectura sigue un modelo estricto de separación de responsabilidades y r
 
 ```mermaid
 graph TD
-    User([Usuario]) -->|HTTPS| Frontend[Frontend - S3 + CloudFront]
-    Frontend -->|HTTPS + JWT| Route53[Route 53 - DNS]
-    Route53 --> WAF[AWS WAF]
-    WAF --> ALB[Application Load Balancer HTTPS :443]
+    User([Usuario]) -->|HTTPS| Frontend["Frontend (S3 + CloudFront)"]
+    Frontend -->|"HTTPS + Token JWT"| Route53["Route 53 - DNS"]
+    Route53 --> WAF["AWS WAF - Rate Limiting + OWASP Rules"]
+    WAF --> ALB["Application Load Balancer (HTTPS :443)"]
 
-    subgraph "VPC - Subnets Públicas"
+    subgraph PUB ["VPC — Subnets Públicas"]
         ALB
     end
 
-    subgraph "VPC - Subnets Privadas"
-        SvcSolicitudes["Microservicio de Solicitudes<br/>(ECS Fargate)"]
-        SvcUsuarios["Microservicio de Usuarios - Existente<br/>(ECS Fargate)"]
-        Others["Otros microservicios<br/>(ECS Fargate)"]
+    subgraph PRIV ["VPC — Subnets Privadas"]
+        SvcSolicitudes["Microservicio de Solicitudes (ECS Fargate)"]
+        SvcUsuarios["Microservicio de Usuarios - Existente (ECS Fargate)"]
+        Others["Otros microservicios (ECS Fargate)"]
+        DB[("Amazon RDS PostgreSQL - Multi-AZ")]
 
-        ALB -->|Path: /api/v1/solicitudes| SvcSolicitudes
-        ALB -->|Path: /api/v1/usuarios| SvcUsuarios
-        ALB -->|Path: /api/v1/...| Others
+        ALB -->|"Path: /api/v1/solicitudes/*"| SvcSolicitudes
+        ALB -->|"Path: /api/v1/usuarios/*"| SvcUsuarios
+        ALB -->|"Path: /api/v1/...*"| Others
 
-        SvcSolicitudes --> DB[(Amazon RDS PostgreSQL - Multi-AZ)]
+        SvcSolicitudes --> DB
         SvcUsuarios --> DB
     end
 
-    subgraph "AWS Servicios Administrados"
-        Secrets[AWS Secrets Manager]
-        Logs[Amazon CloudWatch Logs]
-        Trace[AWS X-Ray]
-        ECR[Amazon ECR]
-        Cognito[Amazon Cognito]
-
-        SvcSolicitudes -..-> Secrets
-        SvcSolicitudes -..-> Logs
-        SvcSolicitudes -..-> Trace
-        SvcUsuarios -..-> Secrets
-        SvcUsuarios -..-> Logs
+    subgraph AWS ["AWS Servicios Administrados"]
+        Secrets["AWS Secrets Manager"]
+        Logs["Amazon CloudWatch Logs + Alarms"]
+        Trace["AWS X-Ray (Trazabilidad)"]
+        Cognito["Amazon Cognito (AuthN)"]
+        ECR["Amazon ECR (Imágenes Docker)"]
     end
+
+    SvcSolicitudes -.-> Secrets
+    SvcSolicitudes -.-> Logs
+    SvcSolicitudes -.-> Trace
+    SvcUsuarios -.-> Secrets
+    SvcUsuarios -.-> Logs
+    Frontend -.-> Cognito
+    ALB -.-> Cognito
 ```
 
 ---
