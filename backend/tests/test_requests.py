@@ -5,7 +5,7 @@ def test_health_check(client):
 
 def test_create_valid_solicitude(client):
     payload = {
-        "external_id": "REQ-12345",
+        "external_id": "12345678",
         "request_type": "soporte técnico",
         "requester_name": "Test User",
         "email": "test@example.com",
@@ -21,7 +21,7 @@ def test_create_valid_solicitude(client):
 
 def test_create_duplicate_solicitude(client):
     payload = {
-        "external_id": "REQ-UNIQUE",
+        "external_id": "87654321",
         "request_type": "académica",
         "requester_name": "Test",
         "email": "test@test.com",
@@ -45,10 +45,23 @@ def test_invalid_data_rejection(client):
     response = client.post("/solicitudes", json=payload)
     assert response.status_code == 422 # Unprocessable Entity validation error
 
+def test_invalid_cedula_rejection(client):
+    payload = {
+        "external_id": "BAD123", # Letras en vez de solo números
+        "request_type": "soporte técnico",
+        "requester_name": "Test User",
+        "email": "test@example.com",
+        "description": "Need help with login",
+        "priority": "alta"
+    }
+    response = client.post("/solicitudes", json=payload)
+    assert response.status_code == 422
+    assert "La cédula (external_id) debe contener entre 8 y 10 dígitos numéricos." in response.text
+
 def test_update_status(client):
     # 1. Create it
     payload = {
-        "external_id": "REQ-UPDATE",
+        "external_id": "11223344",
         "request_type": "académica",
         "requester_name": "Test",
         "email": "test@test.com",
