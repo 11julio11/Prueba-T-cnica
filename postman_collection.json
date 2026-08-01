@@ -1,198 +1,308 @@
 {
 	"info": {
-		"name": "Prueba Técnica Backend - Solicitudes",
-		"description": "Colección de Postman para probar los endpoints del servicio de gestión de solicitudes institucionales.",
+		"name": "Prueba Técnica Backend – Solicitudes Institucionales",
+		"description": "Colección para probar el servicio de gestión de solicitudes institucionales. Base URL: http://localhost:8000",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "solicitud_id",
+			"value": "",
+			"type": "string"
+		}
+	],
 	"item": [
 		{
-			"name": "Health Check",
+			"name": "1. Health Check",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8000/health",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8000",
-					"path": [
-						"health"
-					]
+					"raw": "{{base_url}}/health",
+					"host": ["{{base_url}}"],
+					"path": ["health"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "DB Readiness Check",
+			"name": "2. DB Readiness Check",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8000/health/ready",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8000",
-					"path": [
-						"health",
-						"ready"
-					]
+					"raw": "{{base_url}}/health/ready",
+					"host": ["{{base_url}}"],
+					"path": ["health", "ready"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Crear Solicitud (Válida)",
+			"name": "3. Crear Solicitud – Soporte Técnico (201)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var json = pm.response.json();",
+							"pm.collectionVariables.set('solicitud_id', json.id);",
+							"pm.test('Status 201', function(){ pm.response.to.have.status(201); });",
+							"pm.test('Estado inicial es recibida', function(){ pm.expect(json.estado).to.eql('recibida'); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"external_id\": \"REQ-001\",\n    \"request_type\": \"soporte técnico\",\n    \"requester_name\": \"Juan Perez\",\n    \"email\": \"juan@example.com\",\n    \"description\": \"No puedo acceder al sistema de notas.\",\n    \"priority\": \"alta\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
+					"raw": "{\n    \"identificador_externo\": \"EXT-TEST-001\",\n    \"tipo\": \"soporte_tecnico\",\n    \"nombre_solicitante\": \"Test User\",\n    \"correo\": \"test.user@example.com\",\n    \"descripcion\": \"No puedo acceder al sistema de notas desde ayer en la mañana\",\n    \"prioridad\": \"alta\"\n}",
+					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "http://localhost:8000/solicitudes",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8000",
-					"path": [
-						"solicitudes"
-					]
+					"raw": "{{base_url}}/api/v1/solicitudes",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Crear Solicitud (Email Inválido - 422)",
+			"name": "4. Crear Solicitud – Acceso Plataforma (201)",
 			"request": {
 				"method": "POST",
 				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"external_id\": \"REQ-002\",\n    \"request_type\": \"soporte técnico\",\n    \"requester_name\": \"Maria\",\n    \"email\": \"correo-invalido\",\n    \"description\": \"Falla la plataforma\",\n    \"priority\": \"baja\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
+					"raw": "{\n    \"identificador_externo\": \"EXT-TEST-002\",\n    \"tipo\": \"acceso_plataforma\",\n    \"nombre_solicitante\": \"Test User Two\",\n    \"correo\": \"user2@example.com\",\n    \"descripcion\": \"Necesito acceso al módulo de reportes financieros\",\n    \"prioridad\": \"media\"\n}",
+					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "http://localhost:8000/solicitudes",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8000",
-					"path": [
-						"solicitudes"
-					]
+					"raw": "{{base_url}}/api/v1/solicitudes",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Obtener Solicitudes (Filtros)",
+			"name": "5. Crear Solicitud – Académica (201)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"identificador_externo\": \"EXT-TEST-003\",\n    \"tipo\": \"academica\",\n    \"nombre_solicitante\": \"Test User Three\",\n    \"correo\": \"user3@example.com\",\n    \"descripcion\": \"Solicitud de corrección de notas del segundo semestre según acta adjunta\",\n    \"prioridad\": \"alta\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/solicitudes",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Crear Solicitud – DUPLICADA (409)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"identificador_externo\": \"EXT-TEST-001\",\n    \"tipo\": \"soporte_tecnico\",\n    \"nombre_solicitante\": \"Test User\",\n    \"correo\": \"test.user@example.com\",\n    \"descripcion\": \"Intento duplicar el identificador EXT-TEST-001\",\n    \"prioridad\": \"baja\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/solicitudes",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "7. Crear Solicitud – Email Inválido (422)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"identificador_externo\": \"EXT-ERR-001\",\n    \"tipo\": \"soporte_tecnico\",\n    \"nombre_solicitante\": \"Test User\",\n    \"correo\": \"esto-no-es-un-correo\",\n    \"descripcion\": \"Descripción lo suficientemente larga para pasar la validación mínima\",\n    \"prioridad\": \"alta\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/solicitudes",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8. Crear Solicitud – Tipo Inválido (422)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"identificador_externo\": \"EXT-ERR-002\",\n    \"tipo\": \"tipo_que_no_existe\",\n    \"nombre_solicitante\": \"Test User\",\n    \"correo\": \"test@example.com\",\n    \"descripcion\": \"Descripción lo suficientemente larga para pasar la validación mínima\",\n    \"prioridad\": \"alta\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/solicitudes",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9. Listar Todas las Solicitudes",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8000/solicitudes?status=recibida&priority=alta",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8000",
-					"path": [
-						"solicitudes"
-					],
+					"raw": "{{base_url}}/api/v1/solicitudes",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "10. Listar con Filtro – estado=recibida",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v1/solicitudes?estado=recibida",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes"],
+					"query": [{"key": "estado", "value": "recibida"}]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "11. Listar con Filtro – tipo y prioridad",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v1/solicitudes?tipo=soporte_tecnico&prioridad=alta",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes"],
 					"query": [
-						{
-							"key": "status",
-							"value": "recibida"
-						},
-						{
-							"key": "priority",
-							"value": "alta"
-						}
+						{"key": "tipo", "value": "soporte_tecnico"},
+						{"key": "prioridad", "value": "alta"}
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Obtener Solicitud por ID",
+			"name": "12. Obtener Solicitud por ID (variable)",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8000/solicitudes/1",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8000",
-					"path": [
-						"solicitudes",
-						"1"
-					]
+					"raw": "{{base_url}}/api/v1/solicitudes/{{solicitud_id}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes", "{{solicitud_id}}"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Actualizar Estado (PATCH)",
+			"name": "13. Obtener Solicitud – ID Inexistente (404)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v1/solicitudes/00000000-0000-0000-0000-000000000000",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes", "00000000-0000-0000-0000-000000000000"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "14. Actualizar Estado → en_proceso (200)",
 			"request": {
 				"method": "PATCH",
 				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"status\": \"en proceso\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
+					"raw": "{\n    \"estado\": \"en_proceso\"\n}",
+					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
-					"raw": "http://localhost:8000/solicitudes/1/estado",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8000",
-					"path": [
-						"solicitudes",
-						"1",
-						"estado"
-					]
+					"raw": "{{base_url}}/api/v1/solicitudes/{{solicitud_id}}/estado",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes", "{{solicitud_id}}", "estado"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "15. Actualizar Estado → completada (200)",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"estado\": \"completada\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/solicitudes/{{solicitud_id}}/estado",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes", "{{solicitud_id}}", "estado"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "16. Actualizar Estado – Estado Inválido (422)",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"estado\": \"pendiente\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/solicitudes/{{solicitud_id}}/estado",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "solicitudes", "{{solicitud_id}}", "estado"]
 				}
 			},
 			"response": []
