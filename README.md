@@ -1,223 +1,163 @@
-# Institutional Requests Backend Service
+# Servicio de Backend para Solicitudes Institucionales
 
-REST API for managing institutional requests, built with FastAPI and hexagonal (Clean) architecture. Fully containerized with Docker Compose.
+API REST para la gestión de solicitudes institucionales, construida con FastAPI y Arquitectura Hexagonal (Arquitectura Limpia). Completamente contenida con Docker Compose.
 
 ---
 
-## 🚀 Quickstart
+## 🚀 Inicio Rápido
 
-**Prerequisites:** Docker and Docker Compose installed.
+**Prerrequisitos:** Tener Docker y Docker Compose instalados.
 
 ```bash
-# 1. Clone the repository
-git clone <repository-url>
-cd <repository-directory>
+# 1. Clonar el repositorio
+git clone <url-del-repositorio>
+cd <directorio-del-repositorio>
 
-# 2. Set up environment variables
+# 2. Configurar variables de entorno
 cp .env.example .env
 
-# 3. Start all services (backend, database, consumer)
+# 3. Levantar todos los servicios (backend, base de datos, consumidor)
 docker compose up --build
 ```
 
-The stack boots in this order: **PostgreSQL → Backend (runs Alembic migrations) → Consumer**.
+El stack arranca en el siguiente orden: **PostgreSQL → Backend (ejecuta migraciones con Alembic) → Consumer**.
 
-| Service | URL |
+| Servicio | URL |
 |---|---|
 | Swagger / OpenAPI | http://localhost:8000/docs |
 | ReDoc | http://localhost:8000/redoc |
-| Health check | http://localhost:8000/health |
+| Health check (Salud) | http://localhost:8000/health |
 
-### Stop the services
+### Detener los servicios
 
 ```bash
-docker compose down           # stop containers
-docker compose down -v        # stop and wipe the database volume
+docker compose down           # detiene los contenedores
+docker compose down -v        # detiene y elimina el volumen de la base de datos
 ```
 
-### View logs
+### Ver logs
 
 ```bash
-docker compose logs -f              # all services
-docker compose logs -f backend      # backend only
-docker compose logs -f consumer     # consumer only
+docker compose logs -f              # todos los servicios
+docker compose logs -f backend      # solo el backend
+docker compose logs -f consumer     # solo el consumidor
 ```
 
 ---
 
-## 🧪 Running the Test Suite
+## 🧪 Ejecución de Pruebas Unitarias
 
 ```bash
-# Option A: inside the running container
+# Opción A: Dentro del contenedor en ejecución
 docker compose exec backend pytest tests/ -v
 
-# Option B: locally (Python 3.11+ required, with pip install -r backend/requirements.txt)
-cd <repository-root>
-PYTHONPATH=backend DATABASE_URL=postgresql://... pytest backend/tests -v
+# Opción B: Localmente (Requiere Python 3.12+, con pip install -r backend/requirements.txt)
+cd <raíz-del-repositorio>
+$env:DATABASE_URL="sqlite:///:memory:"  # En Windows PowerShell
+pytest backend/tests -v
 ```
 
-**44 tests, 0 failures.** Coverage includes:
+**La suite de pruebas incluye tests de concurrencia e integridad**. La cobertura abarca:
 
-| Area | Tests |
+| Área | Pruebas |
 |---|---|
-| Schema validation (Pydantic) | Valid payload, invalid email, invalid catalog values, missing fields, whitespace cleanup |
-| Domain entity | Auto-ID, UTC timestamps, initial state, state transitions |
-| Domain service | Create, get, list with filters, update state |
-| Duplicate handling | Rejects duplicates, does not persist |
-| Not-found records | Raises `RequestNotFoundError` on get and update |
-| Health endpoints | `/health` always-up, `/health/ready` with mocked DB |
+| Validación de Schemas (Pydantic) | Payload válido, email inválido, valores fuera de catálogo, campos faltantes, limpieza de espacios |
+| Casos de Uso (Lógica de Negocio) | Auto-ID, timestamps UTC, estado inicial, transiciones de estado, concurrencia |
+| Repositorio (Manejo de Errores) | Intercepción de `IntegrityError` nativo simulado, manejo de `DuplicateExternalIdError` |
+| Manejo de Duplicados | Rechaza duplicados mediante comprobación concurrente segura |
+| Registros no encontrados | Lanza `RequestNotFoundError` en lectura y actualización |
+| Endpoints de Salud | `/health` siempre activo, `/health/ready` con base de datos simulada |
 
 ---
 
-## 📐 Architecture & Technical Decisions
+## 📐 Arquitectura y Decisiones Técnicas
 
-### Layer Diagram
+El diseño de esta solución fue pensado para ser mantenible, escalable y testable. Estos son los pilares arquitectónicos que se sustentan en este proyecto:
+
+### 1. Arquitectura Hexagonal (Ports & Adapters)
+Se optó por separar estrictamente la **Lógica de Negocio (Dominio y Casos de Uso)** de los **Detalles Técnicos (FastAPI, PostgreSQL, SQLAlchemy)**.
+- **¿Por qué?** Permite que el sistema evolucione sin fricción. Si a futuro se decide cambiar el framework web o la base de datos, el núcleo de la aplicación (entidades y casos de uso) no sufrirá ninguna modificación porque se comunica a través de "puertos" (interfaces abstractas) implementados por "adaptadores".
+
+### 2. Pruebas Unitarias Orientadas a Casos de Uso
+En lugar de probar entidades anémicas de forma aislada, los tests unitarios están enfocados en los **Casos de Uso** (orquestadores). 
+- **¿Por qué?** Probar el caso de uso garantiza que estamos validando el comportamiento y las reglas de negocio reales del sistema (ej: *crear una solicitud*, *actualizar un estado*), facilitando la inyección de repositorios simulados (Mocks) para probar escenarios críticos como la concurrencia.
+
+### Diagrama de Capas
 
 ```mermaid
 graph LR
-    subgraph API ["API Layer (FastAPI)"]
+    subgraph API ["Capa API (FastAPI)"]
         R["Routers\n/requests\n/health"]
         S["Pydantic Schemas\nRequest / Response"]
-        EH["Exception Handlers\nHTTP error mapping"]
+        EH["Manejador Excepciones\nMapeo a HTTP"]
         R --> S
     end
 
-    subgraph DOMAIN ["Domain Layer (Pure Python)"]
-        SVC["RequestService\nBusiness Logic"]
-        ENT["ServiceRequest Entity\nValue Objects"]
-        PORT["RequestRepository\nAbstract Port"]
-        EXC["Domain Exceptions\nIdentificadorDuplicado\nSolicitudNoEncontrada"]
+    subgraph DOMAIN ["Capa Dominio (Python Puro)"]
+        SVC["Casos de Uso\nRegisterInstitutionalRequest"]
+        ENT["Entidad\nInstitutionalRequest"]
+        PORT["RequestRepository\nPuerto Abstracto"]
+        EXC["Excepciones Dominio\nDuplicateExternalIdError"]
         SVC --> ENT
         SVC --> PORT
         SVC --> EXC
     end
 
-    subgraph INFRA ["Infrastructure Layer (SQLAlchemy)"]
-        REPO["Repository Impl\nPostgreSQL queries"]
-        MAPPER["Mapper\nORM ↔ Entity"]
-        MODEL["SQLAlchemy Model\nSolicitudModel"]
-        CONN["DB Connection\nEngine / Session"]
-        LOG["JSON Logger\nTimingContext"]
+    subgraph INFRA ["Capa Infraestructura (SQLAlchemy)"]
+        REPO["Implementación Repositorio\nPostgreSQL"]
+        MAPPER["Mapper\nORM ↔ Entidad"]
+        MODEL["Modelo SQLAlchemy\nRequestModel"]
+        CONN["Conexión BD\nEngine / Session"]
         REPO --> MAPPER
         MAPPER --> MODEL
         REPO --> CONN
     end
 
-    R -->|"Depends()"| SVC
-    PORT -.->|"implemented by"| REPO
+    R -->|"Inyección (Depends)"| SVC
+    PORT -.->|"Implementado por"| REPO
 ```
 
-### Layer Structure
+### Decisiones Clave Adicionales
 
-```text
-backend/
-└── app/
-    ├── api/
-    │   ├── v1/
-    │   │   ├── routers/        # FastAPI route handlers (requests, health)
-    │   │   └── schemas/        # Pydantic request/response models
-    │   ├── dependencies.py     # Dependency injection (repository → service)
-    │   └── exception_handlers.py  # Centralized HTTP error mapping
-    ├── domain/
-    │   ├── entities/           # ServiceRequest entity (pure Python, no ORM)
-    │   ├── value_objects/      # Status, Priority, RequestType enums
-    │   ├── ports/              # RequestRepository abstract interface
-    │   ├── services/           # Business logic (RequestService)
-    │   └── exceptions.py       # Domain exceptions (DuplicateExternalIdError, RequestNotFoundError)
-    ├── infrastructure/
-    │   ├── database/
-    │   │   ├── connection.py   # SQLAlchemy engine, session, health check
-    │   │   ├── models.py       # ORM model (SolicitudModel)
-    │   │   ├── mapper.py       # Converts between ORM ↔ domain entity
-    │   │   └── solicitud_repository_impl.py  # Concrete repository (PostgreSQL)
-    │   └── logging/
-    │       └── logger.py       # JSON structured logger + TimingContext
-    ├── config.py               # pydantic-settings — all config from env vars
-    └── main.py                 # FastAPI app factory, middleware, router registration
-migrations/                     # Alembic migration scripts
-tests/
-└── unit/
-    ├── api/                    # Schema and health endpoint tests
-    └── domain/                 # Entity and service tests (fully mocked, no DB)
-```
-
-### Key Decisions
-
-| Decision | Rationale |
+| Decisión | Justificación |
 |---|---|
-| **Hexagonal architecture** | Domain layer has zero infrastructure dependencies. Tests run without DB. |
-| **Alembic migrations** | Tracked, versioned, and run automatically at container startup via `entrypoint.sh`. |
-| **JSON structured logging** | Custom `JSONFormatter` emits `timestamp`, `level`, `service`, `method`, `endpoint`, `status_code`, `duration_ms`, `request_id`. Compatible with CloudWatch, ELK, Datadog. |
-| **No retry libraries in consumer** | Consumer uses `urllib` stdlib only — no external dependencies. Retry with exponential backoff + jitter implemented manually. |
-| **Unique constraint on `external_id`** | Enforced at DB level (UNIQUE) and at service level (checked before insert). Handles concurrent requests safely. |
-| **Indexes** | Individual indexes on `status`, `type`, `priority`, `external_id` + composite index `(status, type, priority)` for common filter queries. |
-| **pydantic-settings** | All configuration from environment variables. No hardcoded secrets. |
+| **Alembic (Migraciones)** | Las migraciones están versionadas y se ejecutan automáticamente al arrancar el contenedor (`entrypoint.sh`). |
+| **Logs Estructurados (JSON)** | Formateador JSON a la medida emite `timestamp`, `service`, `method`, `endpoint`, `status_code`, `duration_ms`. 100% compatible con CloudWatch o Datadog. |
+| **Integridad Concurrente** | El control de duplicidad se gestiona capturando la colisión nativa (`IntegrityError`) de la base de datos, protegiendo al sistema de "Condiciones de Carrera" (Race Conditions). |
+| **pydantic-settings** | Configuración inyectada 100% desde variables de entorno. Cero secretos en código. |
 
 ---
 
 ## 🔌 Endpoints
 
-| Method | Route | Description |
+| Método | Ruta | Descripción |
 |---|---|---|
-| `POST` | `/api/v1/requests` | Create a new request |
-| `GET` | `/api/v1/requests` | List requests (filterable) |
-| `GET` | `/api/v1/requests/{id}` | Get a specific request by UUID |
-| `PATCH` | `/api/v1/requests/{id}/status` | Update request status |
-| `GET` | `/health` | API availability check |
-| `GET` | `/health/ready` | PostgreSQL connectivity check |
-
-### Filter parameters for `GET /api/v1/requests`
-
-| Parameter | Values |
-|---|---|
-| `status` | `received`, `in_progress`, `completed`, `rejected` |
-| `type` | `platform_access`, `technical_support`, `academic`, `administrative` |
-| `priority` | `low`, `medium`, `high` |
-| `limite` | 1–500 (default: 100) |
-| `offset` | ≥ 0 (default: 0) |
+| `POST` | `/api/v1/requests` | Crear una nueva solicitud |
+| `GET` | `/api/v1/requests` | Listar solicitudes (con filtros) |
+| `GET` | `/api/v1/requests/{id}` | Obtener una solicitud específica por UUID |
+| `PATCH` | `/api/v1/requests/{id}/status` | Actualizar el estado de una solicitud |
+| `GET` | `/health` | Chequeo de disponibilidad de la API |
+| `GET` | `/health/ready` | Chequeo de conexión con PostgreSQL |
 
 ---
 
-## ⚙️ Environment Variables
+## ⚙️ Variables de Entorno
 
-| Variable | Description | Default |
+| Variable | Descripción | Por defecto |
 |---|---|---|
-| `DATABASE_URL` | Full PostgreSQL connection string | *(required)* |
-| `POSTGRES_USER` | DB username (used by docker-compose to build DATABASE_URL) | `admin` |
-| `POSTGRES_PASSWORD` | DB password | *(required)* |
-| `POSTGRES_DB` | Database name | `solicitudes_db` |
-| `LOG_LEVEL` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) | `INFO` |
-| `DEBUG` | Enable FastAPI debug mode | `false` |
-| `BACKEND_PORT` | Host port for the API | `8000` |
-| `DB_PORT` | Host port for PostgreSQL | `5432` |
-| `MAX_ATTEMPTS` | Consumer max retry attempts | `5` |
-| `BASE_DELAY_S` | Consumer base delay for exponential backoff (seconds) | `1.0` |
-| `MAX_DELAY_S` | Consumer max delay cap (seconds) | `30.0` |
-| `TIMEOUT_S` | Consumer HTTP request timeout (seconds) | `10.0` |
+| `DATABASE_URL` | Cadena de conexión completa a PostgreSQL | *(Requerido)* |
+| `POSTGRES_USER` | Usuario de BD | `admin` |
+| `POSTGRES_PASSWORD` | Contraseña de BD | *(Requerido)* |
+| `POSTGRES_DB` | Nombre de la base de datos | `solicitudes_db` |
+| `LOG_LEVEL` | Nivel de log (`DEBUG`, `INFO`, `WARNING`, `ERROR`) | `INFO` |
+| `DEBUG` | Activa modo debug en FastAPI | `false` |
+| `BACKEND_PORT` | Puerto expuesto para la API | `8000` |
+| `DB_PORT` | Puerto expuesto para PostgreSQL | `5432` |
 
 ---
 
-## 📬 API Examples
+## ☁️ Propuesta de Despliegue en AWS
 
-Examples are available in:
-- [`requests.http`](./requests.http) — VS Code REST Client format
-- [`postman_collection.json`](./postman_collection.json) — Postman collection
+La justificación de los componentes en la nube (Load Balancer, Fargate, RDS, SQS, Reglas de Acceso y Estrategia de Escalabilidad) así como la configuración Serverless y Cloud-Native para soportar alta demanda se documentan detalladamente en el archivo:
 
----
-
-## ⚠️ Limitations & Possible Improvements
-
-| Limitation | Possible Improvement |
-|---|---|
-| No authentication/authorization on endpoints | Add JWT validation middleware (FastAPI `Depends`) or integrate with AWS Cognito |
-| Consumer runs once and exits | Convert to a polling loop or replace with a message queue (SQS, RabbitMQ) |
-| No integration/e2e tests | Add tests using `TestClient` with a real in-memory SQLite or test PostgreSQL container |
-| No CORS origin restriction | Restrict `allow_origins` to the real frontend domain in production |
-| No rate limiting | Add `slowapi` or enforce at ALB/API Gateway level |
-| Logs only to stdout | Persist log files per service using Docker volumes already configured in `docker-compose.yml` |
-
----
-
-## ☁️ AWS Deployment Proposal
-
-See [`AWS_PROPOSAL.md`](./AWS_PROPOSAL.md) for the full architecture, flowchart, and justification of each AWS service.
+👉 **[`AWS_PROPOSAL.md`](./AWS_PROPOSAL.md)**

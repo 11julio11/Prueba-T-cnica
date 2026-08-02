@@ -1,7 +1,9 @@
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.app.domain.entities import InstitutionalRequest
+from backend.app.domain.exceptions import DuplicateExternalIdError
 from backend.app.domain.ports.request_repository import RequestRepository
 from backend.app.domain.value_objects import Priority, RequestType, Status
 from backend.app.infrastructure.database.mapper import to_entity, to_model
@@ -13,19 +15,23 @@ class PostgresRequestRepository(RequestRepository):
         self._db = db
 
     def save(self, request: InstitutionalRequest) -> InstitutionalRequest:
-        model = self._db.get(RequestModel, request.external_id)
-        if model:
-            # Update
-            model.status = request.status
-            model.updated_at = request.updated_at
-        else:
-            # Create
-            model = to_model(request)
-            self._db.add(model)
+        try:
+            model = self._db.get(RequestModel, request.external_id)
+            if model:
+                # Update
+                model.status = request.status
+                model.updated_at = request.updated_at
+            else:
+                # Create
+                model = to_model(request)
+                self._db.add(model)
 
-        self._db.commit()
-        self._db.refresh(model)
-        return to_entity(model)
+            self._db.commit()
+            self._db.refresh(model)
+            return to_entity(model)
+        except IntegrityError:
+            self._db.rollback()
+            raise DuplicateExternalIdError(request.external_id)
 
     def get_by_external_id(
         self, external_id: str
