@@ -1,11 +1,11 @@
 
 from sqlalchemy.orm import Session
 
-from app.domain.entities import InstitutionalRequest
-from app.domain.ports.request_repository import RequestRepository
-from app.domain.value_objects import Priority, RequestType, Status
-from app.infrastructure.database.mapper import to_entity, to_model
-from app.infrastructure.database.models import RequestModel
+from backend.app.domain.entities import InstitutionalRequest
+from backend.app.domain.ports.request_repository import RequestRepository
+from backend.app.domain.value_objects import Priority, RequestType, Status
+from backend.app.infrastructure.database.mapper import to_entity, to_model
+from backend.app.infrastructure.database.models import RequestModel
 
 
 class PostgresRequestRepository(RequestRepository):

@@ -1,19 +1,19 @@
-from enum import Enum
+from enum import StrEnum, auto
 
 
-class Status(str, Enum):
-    RECEIVED = "received"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    REJECTED = "rejected"
+class Status(StrEnum):
+    RECEIVED = auto()
+    IN_PROGRESS = auto()
+    COMPLETED = auto()
+    REJECTED = auto()
 
-class Priority(str, Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
+class Priority(StrEnum):
+    LOW = auto()
+    MEDIUM = auto()
+    HIGH = auto()
 
-class RequestType(str, Enum):
-    PLATFORM_ACCESS = "platform_access"
-    TECHNICAL_SUPPORT = "technical_support"
-    ACADEMIC = "academic"
-    ADMINISTRATIVE = "administrative"
+class RequestType(StrEnum):
+    PLATFORM_ACCESS = auto()
+    TECHNICAL_SUPPORT = auto()
+    ACADEMIC = auto()
+    ADMINISTRATIVE = auto()

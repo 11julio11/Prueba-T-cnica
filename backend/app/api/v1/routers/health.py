@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
-from app.infrastructure.database.connection import check_db_connection
+from backend.app.infrastructure.database.connection import check_db_connection
 
 router = APIRouter(tags=["Health"])
 

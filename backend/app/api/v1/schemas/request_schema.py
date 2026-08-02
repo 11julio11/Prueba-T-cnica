@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from app.domain.value_objects import Priority, RequestType, Status
+from backend.app.domain.value_objects import Priority, RequestType, Status
 
 
 class CreateRequestSchema(BaseModel):

@@ -14,8 +14,8 @@ from fastapi.testclient import TestClient
 class TestHealthEndpoint:
 
     def test_health_returns_ok(self):
-        with patch("app.config.Settings.model_post_init", return_value=None):
-            from app.main import app
+        with patch("backend.app.config.Settings.model_post_init", return_value=None):
+            from backend.app.main import app
             client = TestClient(app, raise_server_exceptions=False)
 
         response = client.get("/health")
@@ -24,7 +24,7 @@ class TestHealthEndpoint:
         assert body["status"] == "ok"
 
     def test_health_contains_service_name(self):
-        from app.main import app
+        from backend.app.main import app
         client = TestClient(app, raise_server_exceptions=False)
         response = client.get("/health")
         assert "service" in response.json()
@@ -36,7 +36,7 @@ class TestHealthReadyEndpoint:
         from app.main import app
         client = TestClient(app, raise_server_exceptions=False)
 
-        with patch("app.api.v1.routers.health.check_db_connection", return_value=True):
+        with patch("backend.app.api.v1.routers.health.check_db_connection", return_value=True):
             response = client.get("/health/ready")
         assert response.status_code == 200
         assert response.json()["status"] == "ready"
@@ -45,7 +45,7 @@ class TestHealthReadyEndpoint:
         from app.main import app
         client = TestClient(app, raise_server_exceptions=False)
 
-        with patch("app.api.v1.routers.health.check_db_connection", return_value=False):
+        with patch("backend.app.api.v1.routers.health.check_db_connection", return_value=False):
             response = client.get("/health/ready")
         assert response.status_code == 503
         assert response.json()["status"] == "not_ready"

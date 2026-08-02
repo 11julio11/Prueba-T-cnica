@@ -1,7 +1,7 @@
 import pytest
-from app.domain.entities import InstitutionalRequest
-from app.domain.exceptions import InvalidStatusTransitionError
-from app.domain.value_objects import Priority, RequestType, Status
+from backend.app.domain.entities import InstitutionalRequest
+from backend.app.domain.exceptions import InvalidStatusTransitionError
+from backend.app.domain.value_objects import Priority, RequestType, Status
 
 
 def test_institutional_request_creation(valid_data):

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from app.domain.entities import InstitutionalRequest
-from app.domain.value_objects import Priority, RequestType, Status
+from backend.app.domain.entities import InstitutionalRequest
+from backend.app.domain.value_objects import Priority, RequestType, Status
 
 
 class RequestRepository(ABC):

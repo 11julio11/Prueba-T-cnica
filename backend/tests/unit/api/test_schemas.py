@@ -1,6 +1,6 @@
 import pytest
-from app.api.v1.schemas.request_schema import CreateRequestSchema, UpdateStatusSchema
-from app.domain.value_objects import Priority, RequestType, Status
+from backend.app.api.v1.schemas.request_schema import CreateRequestSchema, UpdateStatusSchema
+from backend.app.domain.value_objects import Priority, RequestType, Status
 from pydantic import ValidationError
 
 

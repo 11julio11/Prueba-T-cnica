@@ -1,13 +1,13 @@
 from unittest.mock import MagicMock
 
 import pytest
-from app.domain.entities import InstitutionalRequest
-from app.domain.ports.request_repository import RequestRepository
-from app.application.use_cases import (
+from backend.app.domain.entities import InstitutionalRequest
+from backend.app.domain.ports.request_repository import RequestRepository
+from backend.app.application.use_cases import (
     RegisterInstitutionalRequest,
     UpdateInstitutionalRequestStatus,
 )
-from app.domain.value_objects import Priority, RequestType
+from backend.app.domain.value_objects import Priority, RequestType
 
 
 @pytest.fixture

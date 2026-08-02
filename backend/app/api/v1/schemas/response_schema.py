@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.domain.value_objects import Priority, RequestType, Status
+from backend.app.domain.value_objects import Priority, RequestType, Status
 
 
 class ResponseSchema(BaseModel):

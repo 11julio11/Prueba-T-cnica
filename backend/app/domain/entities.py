@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from app.domain.value_objects import Priority, RequestType, Status
+from backend.app.domain.value_objects import Priority, RequestType, Status
 
 
 @dataclass
@@ -21,7 +21,7 @@ class InstitutionalRequest:
     )
 
     def update_status(self, new_status: Status) -> None:
-        from app.domain.exceptions import InvalidStatusTransitionError
+        from backend.app.domain.exceptions import InvalidStatusTransitionError
         if self.status == Status.COMPLETED and new_status == Status.RECEIVED:
             raise InvalidStatusTransitionError(self.status, new_status)
         self.status = new_status

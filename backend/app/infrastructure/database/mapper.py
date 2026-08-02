@@ -1,5 +1,5 @@
-from app.domain.entities import InstitutionalRequest
-from app.infrastructure.database.models import RequestModel
+from backend.app.domain.entities import InstitutionalRequest
+from backend.app.infrastructure.database.models import RequestModel
 
 
 def to_entity(model: RequestModel) -> InstitutionalRequest:

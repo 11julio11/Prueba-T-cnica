@@ -1,11 +1,11 @@
 
 import pytest
-from app.domain.exceptions import (
+from backend.app.domain.exceptions import (
     DuplicateExternalIdError,
     InvalidStatusTransitionError,
     RequestNotFoundError,
 )
-from app.domain.value_objects import Status
+from backend.app.domain.value_objects import Status
 
 
 def test_register_institutional_request_success(register_use_case, repo_mock, valid_data):

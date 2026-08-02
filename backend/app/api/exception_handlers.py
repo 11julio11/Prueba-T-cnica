@@ -2,8 +2,8 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.domain.exceptions import DuplicateExternalIdError, RequestNotFoundError
-from app.infrastructure.logging.logger import get_logger
+from backend.app.domain.exceptions import DuplicateExternalIdError, RequestNotFoundError
+from backend.app.infrastructure.logging.logger import get_logger
 
 logger = get_logger(__name__)
 
