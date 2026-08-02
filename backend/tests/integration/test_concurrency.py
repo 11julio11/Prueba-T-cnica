@@ -27,22 +27,22 @@ def test_repository_handles_concurrent_inserts(valid_data):
     The repository must catch this IntegrityError and raise DuplicateExternalIdError.
     """
     session_mock = MagicMock(spec=Session)
-    
+
     # 1. Simulate that the record does NOT exist yet (read phase)
     session_mock.get.return_value = None
-    
+
     # 2. Simulate the database rejecting the commit due to unique constraint (write phase)
     session_mock.commit.side_effect = IntegrityError(
         "duplicate key value violates unique constraint", params={}, orig=Exception()
     )
-    
+
     repo = PostgresRequestRepository(session_mock)
     request = InstitutionalRequest(**valid_data)
-    
+
     # 3. Assert that the repository catches it and raises the domain exception
     with pytest.raises(DuplicateExternalIdError) as exc_info:
         repo.save(request)
-        
+
     assert exc_info.value.external_id == "EXT-CONC-001"
     session_mock.rollback.assert_called_once()
 
