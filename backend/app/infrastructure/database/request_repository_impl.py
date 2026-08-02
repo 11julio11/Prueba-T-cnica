@@ -22,7 +22,7 @@ class PostgresRequestRepository(RequestRepository):
             # Create
             model = to_model(request)
             self._db.add(model)
-        
+
         self._db.commit()
         self._db.refresh(model)
         return to_entity(model)

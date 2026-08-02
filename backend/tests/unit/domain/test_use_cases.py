@@ -30,9 +30,9 @@ def test_update_institutional_request_status_success(update_use_case, repo_mock,
     repo_mock.save.side_effect = lambda req: req
 
     assert existing_request.status == Status.RECEIVED
-    
+
     result = update_use_case.execute(existing_request.external_id, Status.IN_PROGRESS)
-    
+
     assert result.status == Status.IN_PROGRESS
     repo_mock.save.assert_called_once()
 

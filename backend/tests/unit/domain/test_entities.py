@@ -6,7 +6,7 @@ from app.domain.value_objects import Priority, RequestType, Status
 
 def test_institutional_request_creation(valid_data):
     request = InstitutionalRequest(**valid_data)
-    
+
     assert request.external_id == "EXT-001"
     assert request.status == Status.RECEIVED
     assert request.priority == Priority.HIGH
@@ -23,7 +23,7 @@ def test_institutional_request_update_status():
         description="Test",
         priority=Priority.HIGH
     )
-    
+
     request.update_status(Status.IN_PROGRESS)
     assert request.status == Status.IN_PROGRESS
 
@@ -39,8 +39,8 @@ def test_institutional_request_invalid_status_transition():
         description="Test",
         priority=Priority.HIGH
     )
-    
+
     request.update_status(Status.COMPLETED)
-    
+
     with pytest.raises(InvalidStatusTransitionError):
         request.update_status(Status.RECEIVED)
