@@ -2,68 +2,109 @@
 
 La infraestructura de la aplicación está definida como código (Infrastructure as Code) utilizando **AWS CDK con Python**. Esto asegura que el despliegue sea reproducible, seguro y escalable.
 
-## Diagrama de Arquitectura
+## Flujograma de Arquitectura
 
-El siguiente diagrama detalla cómo los componentes interactúan en la nube de AWS:
+El siguiente diagrama muestra el flujo completo de una solicitud desde el usuario hasta la capa de datos, incluyendo los controles de seguridad y observabilidad transversales.
 
 ```mermaid
-architecture-beta
-    group aws(cloud)[AWS Cloud]
-    group vpc(cloud)[VPC] in aws
-    group public(cloud)[Public Subnet] in vpc
-    group private(cloud)[Private Subnet] in vpc
+flowchart TD
+    Usuario(["👤 Usuario"])
+    Frontend(["🖥️ Frontend\nS3 + CloudFront"])
+    HTTPS["🔒 HTTPS + Bearer Token\nJWT / Cognito"]
+    WAF["🛡️ AWS WAF\nDNS · Route 53\nDDoS protection"]
+    ALB["⚖️ Application Load Balancer\nSSL Termination · Health Checks"]
 
-    service alb(server)[Application Load Balancer] in public
-    service backend(server)[Backend ECS Fargate] in private
-    service rds(database)[RDS PostgreSQL] in private
-    service sqs(server)[SQS Message Queue] in aws
-    service consumer(server)[Consumer ECS Fargate] in private
-    
-    alb:R --> L:backend
-    backend:R --> L:rds
-    backend:T --> B:sqs
-    sqs:L --> R:consumer
+    subgraph ECS ["☁️ ECS Fargate — Private Subnet"]
+        SvcBackend["⚙️ Servicio Backend\nFastAPI"]
+        SvcConsumer["📨 Servicio Consumer\nBackground Worker"]
+        SvcOthers["... Otros servicios"]
+    end
+
+    SQS[("📬 AWS SQS\nMessage Queue")]
+    DB[("🗄️ RDS PostgreSQL\nPrivate Subnet")]
+
+    subgraph CrossCutting ["🔧 Servicios Transversales"]
+        Secrets["🔑 AWS Secrets Manager\nCredenciales · API keys"]
+        Logs["📊 CloudWatch\nLogs · Métricas · Alertas"]
+        Tracing["🔍 AWS X-Ray\nTrazabilidad distribuida"]
+    end
+
+    Usuario -->|"Interacción"| Frontend
+    Frontend -->|"HTTPS + Token"| HTTPS
+    HTTPS --> WAF
+    WAF -->|"Tráfico limpio"| ALB
+    ALB --> SvcBackend
+    ALB -.->|"Escalado horizontal"| SvcOthers
+
+    SvcBackend -->|"Escritura / Lectura"| DB
+    SvcBackend -->|"Publica eventos"| SQS
+    SQS -->|"Consume mensajes"| SvcConsumer
+
+    SvcBackend <-->|"Lee secretos"| Secrets
+    SvcConsumer <-->|"Lee secretos"| Secrets
+
+    SvcBackend -->|"Emite logs y métricas"| Logs
+    SvcConsumer -->|"Emite logs y métricas"| Logs
+    SvcBackend -->|"Traza requests"| Tracing
+    SvcConsumer -->|"Traza requests"| Tracing
+
+    style ECS fill:#1a1a2e,stroke:#4f46e5,color:#fff
+    style CrossCutting fill:#0f2027,stroke:#059669,color:#fff
+    style DB fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style SQS fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style WAF fill:#3b0764,stroke:#a855f7,color:#fff
+    style ALB fill:#1c1917,stroke:#f59e0b,color:#fff
 ```
 
-### Componentes:
-1. **Application Load Balancer (ALB):** Recibe el tráfico HTTP de internet y lo distribuye entre las tareas del Backend.
-2. **Backend ECS Fargate:** Ejecuta la API de FastAPI de manera Serverless, escalando según el tráfico sin necesidad de administrar servidores EC2.
-3. **Consumer ECS Fargate:** Tarea en background encargada de leer los eventos y procesar el envío de correos asíncrono.
-4. **RDS PostgreSQL:** Base de datos gestionada, ubicada en subredes privadas para máxima seguridad.
-5. **AWS SQS:** Cola de mensajes totalmente administrada, reemplaza a RabbitMQ para un entorno Cloud-native, desacoplando el backend del consumer.
+### Descripción de Componentes
+
+| Capa | Componente AWS | Responsabilidad |
+|------|---------------|-----------------|
+| **Presentación** | S3 + CloudFront | Sirve el frontend estático con CDN global |
+| **Autenticación** | Amazon Cognito / JWT | Emite y valida tokens de acceso |
+| **Protección perimetral** | Route 53 + AWS WAF | DNS, protección DDoS y filtrado de tráfico malicioso |
+| **Balanceo** | Application Load Balancer | Termina SSL y distribuye tráfico entre tareas ECS |
+| **Cómputo** | ECS Fargate | Ejecuta los servicios como contenedores serverless |
+| **Mensajería** | AWS SQS | Desacopla el backend del worker (reemplaza RabbitMQ) |
+| **Base de datos** | RDS PostgreSQL | Base de datos gestionada en subred privada |
+| **Secretos** | AWS Secrets Manager | Almacena credenciales de BD, API keys y tokens |
+| **Observabilidad** | CloudWatch | Centraliza logs, métricas y alarmas |
+| **Trazabilidad** | AWS X-Ray | Rastrea el flujo de cada request entre servicios |
+
+---
 
 ## Instrucciones de Despliegue (CDK)
 
 El código de infraestructura se encuentra en la carpeta `infrastructure/aws`.
 
 ### Prerrequisitos
-- Tener AWS CLI configurado (`aws configure`).
-- Instalar Node.js y luego instalar CDK globalmente: `npm install -g aws-cdk`.
+- AWS CLI configurado (`aws configure`)
+- Node.js instalado + CDK global: `npm install -g aws-cdk`
 - Python 3.12+
 
 ### Pasos para Desplegar
 
-1. Instalar las dependencias de CDK:
+1. Crear el entorno virtual e instalar dependencias:
    ```bash
    cd infrastructure/aws
    python -m venv .venv
-   source .venv/bin/activate  # En Windows: .venv\Scripts\activate
+   source .venv/bin/activate  # Windows: .venv\Scripts\activate
    pip install -r requirements.txt
    ```
 
-2. Bootstrapping de AWS CDK (una sola vez por cuenta):
+2. Bootstrap de CDK (una sola vez por cuenta/región):
    ```bash
    cdk bootstrap
    ```
 
-3. Revisar los cambios que se van a aplicar:
+3. Revisar los cambios antes de aplicar:
    ```bash
    cdk diff
    ```
 
-4. Desplegar la infraestructura:
+4. Desplegar la infraestructura completa:
    ```bash
    cdk deploy
    ```
 
-Al finalizar el despliegue, la terminal de CDK mostrará el **Endpoint del Load Balancer** (la URL pública de la API).
+Al finalizar, CDK imprime el **Endpoint del Load Balancer** (URL pública de la API).
