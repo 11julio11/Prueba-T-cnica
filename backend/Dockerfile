@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
-WORKDIR /app
+WORKDIR /app/backend
 
 # System dependencies
 RUN apt-get update \
@@ -26,10 +26,10 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY . .
 
 # Entry script that runs migrations and then starts the server
-COPY entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /app/backend/entrypoint.sh
 # Strip Windows CRLF line endings so the shebang works on Linux
-RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /app/backend/entrypoint.sh && chmod +x /app/backend/entrypoint.sh
 
 EXPOSE 8000
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/app/backend/entrypoint.sh"]
