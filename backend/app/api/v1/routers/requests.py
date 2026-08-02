@@ -6,7 +6,7 @@ from app.api.v1.schemas.request_schema import CreateRequestSchema, UpdateStatusS
 from app.api.v1.schemas.response_schema import ListResponseSchema, ResponseSchema
 from app.domain.exceptions import RequestNotFoundError
 from app.domain.ports.request_repository import RequestRepository
-from app.domain.use_cases import (
+from app.application.use_cases import (
     RegisterInstitutionalRequest,
     UpdateInstitutionalRequestStatus,
 )
@@ -14,14 +14,14 @@ from app.domain.value_objects import Priority, RequestType, Status
 from app.infrastructure.logging.logger import TimingContext, get_logger
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/requests", tags=["Solicitudes"])
+router = APIRouter(prefix="/requests", tags=["Requests"])
 
 
 @router.post(
     "",
     response_model=ResponseSchema,
     status_code=status.HTTP_201_CREATED,
-    summary="Crear una nueva request",
+    summary="Create a new institutional request",
 )
 def create_request(
     body: CreateRequestSchema,
@@ -54,7 +54,7 @@ def create_request(
 @router.get(
     "",
     response_model=ListResponseSchema,
-    summary="Listar requests con filtros opcionales",
+    summary="List requests with optional filters",
 )
 def list_requests(
     status: Status | None = Query(None),
@@ -89,7 +89,7 @@ def list_requests(
 @router.get(
     "/{external_id}",
     response_model=ResponseSchema,
-    summary="Consultar una request específica por external_id",
+    summary="Retrieve a specific request by external_id",
 )
 def get_request(
     external_id: str,
@@ -116,7 +116,7 @@ def get_request(
 @router.patch(
     "/{external_id}/status",
     response_model=ResponseSchema,
-    summary="Actualizar el status de una request",
+    summary="Update the status of a request",
 )
 def update_status(
     external_id: str,

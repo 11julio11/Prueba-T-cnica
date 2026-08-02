@@ -15,15 +15,15 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    logger.info("Iniciando aplicación", extra={"service": settings.app_name})
+    logger.info("Starting application", extra={"service": settings.app_name})
     yield
-    logger.info("Cerrando aplicación")
+    logger.info("Shutting down application")
 
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    description="API REST para gestión de requests institucionales",
+    description="REST API for managing institutional requests",
     lifespan=lifespan,
 )
 

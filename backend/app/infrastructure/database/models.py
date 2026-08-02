@@ -49,7 +49,7 @@ class RequestModel(Base):
         onupdate=_utcnow,
     )
 
-    # Índice compuesto para filtros frecuentes
+    # Composite index for frequent filter combinations
     __table_args__ = (
         Index("ix_requests_status_type_priority", "status", "type", "priority"),
     )

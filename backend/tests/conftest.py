@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 from app.domain.entities import InstitutionalRequest
 from app.domain.ports.request_repository import RequestRepository
-from app.domain.use_cases import (
+from app.application.use_cases import (
     RegisterInstitutionalRequest,
     UpdateInstitutionalRequestStatus,
 )
