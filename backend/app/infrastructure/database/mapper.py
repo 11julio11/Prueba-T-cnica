@@ -1,10 +1,8 @@
-from app.domain.entities.service_request import ServiceRequest
+from app.domain.entities import InstitutionalRequest
 from app.infrastructure.database.models import RequestModel
 
-
-def to_entity(model: RequestModel) -> ServiceRequest:
-    return ServiceRequest(
-        id=model.id,
+def to_entity(model: RequestModel) -> InstitutionalRequest:
+    return InstitutionalRequest(
         external_id=model.external_id,
         type=model.type,
         requester_name=model.requester_name,
@@ -16,10 +14,8 @@ def to_entity(model: RequestModel) -> ServiceRequest:
         updated_at=model.updated_at,
     )
 
-
-def to_model(entity: ServiceRequest) -> RequestModel:
+def to_model(entity: InstitutionalRequest) -> RequestModel:
     return RequestModel(
-        id=entity.id,
         external_id=entity.external_id,
         type=entity.type,
         requester_name=entity.requester_name,

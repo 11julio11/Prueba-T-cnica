@@ -2,11 +2,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.domain.entities.service_request import ServiceRequest
+from app.domain.entities import InstitutionalRequest
 from app.domain.ports.request_repository import RequestRepository
-from app.domain.services.request_service import RequestService
-from app.domain.value_objects.priority import Priority
-from app.domain.value_objects.request_type import RequestType
+from app.domain.use_cases import RegisterInstitutionalRequest, UpdateInstitutionalRequestStatus
+from app.domain.value_objects import Priority, RequestType
 
 
 @pytest.fixture
@@ -15,22 +14,27 @@ def repo_mock() -> MagicMock:
 
 
 @pytest.fixture
-def service(repo_mock: MagicMock) -> RequestService:
-    return RequestService(repo=repo_mock)
+def register_use_case(repo_mock: MagicMock) -> RegisterInstitutionalRequest:
+    return RegisterInstitutionalRequest(repo=repo_mock)
 
 
 @pytest.fixture
-def datos_validos() -> dict:
+def update_use_case(repo_mock: MagicMock) -> UpdateInstitutionalRequestStatus:
+    return UpdateInstitutionalRequestStatus(repo=repo_mock)
+
+
+@pytest.fixture
+def valid_data() -> dict:
     return {
         "external_id": "EXT-001",
-        "type": RequestType.SOPORTE_TECNICO,
+        "type": RequestType.TECHNICAL_SUPPORT,
         "requester_name": "Test User",
         "email": "test.user@example.com",
         "description": "Sample description for automated testing",
-        "priority": Priority.ALTA,
+        "priority": Priority.HIGH,
     }
 
 
 @pytest.fixture
-def solicitud_existente(datos_validos: dict) -> ServiceRequest:
-    return ServiceRequest(**datos_validos)
+def existing_request(valid_data: dict) -> InstitutionalRequest:
+    return InstitutionalRequest(**valid_data)

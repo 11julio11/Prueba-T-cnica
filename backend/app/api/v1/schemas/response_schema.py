@@ -1,17 +1,12 @@
 from datetime import datetime
-from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from app.domain.value_objects.status import Status
-from app.domain.value_objects.priority import Priority
-from app.domain.value_objects.request_type import RequestType
+from app.domain.value_objects import Status, Priority, RequestType
 
-
-class SolicitudResponse(BaseModel):
+class ResponseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
     external_id: str
     type: RequestType
     requester_name: str
@@ -22,7 +17,6 @@ class SolicitudResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-
-class ListaSolicitudesResponse(BaseModel):
+class ListResponseSchema(BaseModel):
     total: int
-    items: list[SolicitudResponse]
+    items: list[ResponseSchema]

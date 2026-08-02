@@ -1,30 +1,18 @@
 from abc import ABC, abstractmethod
 from typing import Optional
-from uuid import UUID
 
-from app.domain.entities.service_request import ServiceRequest
-from app.domain.value_objects.status import Status
-from app.domain.value_objects.priority import Priority
-from app.domain.value_objects.request_type import RequestType
-
+from app.domain.entities import InstitutionalRequest
+from app.domain.value_objects import Status, Priority, RequestType
 
 class RequestRepository(ABC):
-
     @abstractmethod
-    def guardar(self, request: ServiceRequest) -> ServiceRequest:
-        """Persiste una nueva request y la retorna."""
+    def save(self, request: InstitutionalRequest) -> InstitutionalRequest:
+        """Persists a new or updated request and returns it."""
         ...
 
     @abstractmethod
-    def get_by_id(self, id: UUID) -> Optional[ServiceRequest]:
-        """Retorna la request o None si no existe."""
-        ...
-
-    @abstractmethod
-    def obtener_por_identificador_externo(
-        self, external_id: str
-    ) -> Optional[ServiceRequest]:
-        """Retorna la request por su ID externo o None."""
+    def get_by_external_id(self, external_id: str) -> Optional[InstitutionalRequest]:
+        """Returns the request by its external ID or None."""
         ...
 
     @abstractmethod
@@ -33,13 +21,8 @@ class RequestRepository(ABC):
         status: Optional[Status] = None,
         type: Optional[RequestType] = None,
         priority: Optional[Priority] = None,
-        limite: int = 100,
+        limit: int = 100,
         offset: int = 0,
-    ) -> list[ServiceRequest]:
-        """Lista requests con filtros opcionales."""
-        ...
-
-    @abstractmethod
-    def actualizar(self, request: ServiceRequest) -> ServiceRequest:
-        """Actualiza una request existente."""
+    ) -> list[InstitutionalRequest]:
+        """Lists requests with optional filters."""
         ...

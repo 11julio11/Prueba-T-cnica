@@ -15,7 +15,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         request: Request, exc: RequestNotFoundError
     ) -> JSONResponse:
         logger.warning(
-            "ServiceRequest no encontrada",
+            "InstitutionalRequest not found",
             extra={"error": str(exc), "endpoint": str(request.url.path)},
         )
         return JSONResponse(
@@ -28,7 +28,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         request: Request, exc: DuplicateExternalIdError
     ) -> JSONResponse:
         logger.warning(
-            "Identificador duplicado",
+            "Duplicate identifier",
             extra={
                 "external_id": exc.external_id,
                 "endpoint": str(request.url.path),
@@ -44,7 +44,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
         logger.warning(
-            "Error de validación",
+            "Validation error",
             extra={"error": str(exc), "endpoint": str(request.url.path)},
         )
         return JSONResponse(
@@ -55,7 +55,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(Exception)
     async def handle_generic(request: Request, exc: Exception) -> JSONResponse:
         logger.error(
-            "Error interno inesperado",
+            "Unexpected internal error",
             extra={"error": type(exc).__name__, "endpoint": str(request.url.path)},
             exc_info=True,
         )

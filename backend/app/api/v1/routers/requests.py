@@ -1,15 +1,14 @@
 from typing import Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from app.api.dependencies import get_solicitud_service
-from app.api.v1.schemas.request_schema import ActualizarEstadoRequest, CrearSolicitudRequest
-from app.api.v1.schemas.response_schema import ListaSolicitudesResponse, SolicitudResponse
-from app.domain.services.request_service import RequestService
-from app.domain.value_objects.status import Status
-from app.domain.value_objects.priority import Priority
-from app.domain.value_objects.request_type import RequestType
+from app.api.dependencies import get_request_repository
+from app.api.v1.schemas.request_schema import UpdateStatusSchema, CreateRequestSchema
+from app.api.v1.schemas.response_schema import ListResponseSchema, ResponseSchema
+from app.domain.ports.request_repository import RequestRepository
+from app.domain.use_cases import RegisterInstitutionalRequest, UpdateInstitutionalRequestStatus
+from app.domain.value_objects import Status, Priority, RequestType
+from app.domain.exceptions import RequestNotFoundError, DuplicateExternalIdError
 from app.infrastructure.logging.logger import TimingContext, get_logger
 
 logger = get_logger(__name__)
@@ -18,16 +17,17 @@ router = APIRouter(prefix="/requests", tags=["Solicitudes"])
 
 @router.post(
     "",
-    response_model=SolicitudResponse,
+    response_model=ResponseSchema,
     status_code=status.HTTP_201_CREATED,
     summary="Crear una nueva request",
 )
 def create_request(
-    body: CrearSolicitudRequest,
-    service: RequestService = Depends(get_solicitud_service),
-) -> SolicitudResponse:
+    body: CreateRequestSchema,
+    repo: RequestRepository = Depends(get_request_repository),
+) -> ResponseSchema:
     with TimingContext() as t:
-        request = service.create(
+        use_case = RegisterInstitutionalRequest(repo)
+        request = use_case.execute(
             external_id=body.external_id,
             type=body.type,
             requester_name=body.requester_name,
@@ -37,9 +37,8 @@ def create_request(
         )
 
     logger.info(
-        "ServiceRequest creada",
+        "InstitutionalRequest created",
         extra={
-            "request_id": str(request.id),
             "external_id": request.external_id,
             "method": "POST",
             "endpoint": "/requests",
@@ -47,33 +46,33 @@ def create_request(
             "duration_ms": t.elapsed_ms,
         },
     )
-    return SolicitudResponse.model_validate(request.__dict__)
+    return ResponseSchema.model_validate(request.__dict__)
 
 
 @router.get(
     "",
-    response_model=ListaSolicitudesResponse,
+    response_model=ListResponseSchema,
     summary="Listar requests con filtros opcionales",
 )
-def listar_solicitudes(
+def list_requests(
     status: Optional[Status] = Query(None),
     type: Optional[RequestType] = Query(None),
     priority: Optional[Priority] = Query(None),
-    limite: int = Query(100, ge=1, le=500),
+    limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    service: RequestService = Depends(get_solicitud_service),
-) -> ListaSolicitudesResponse:
+    repo: RequestRepository = Depends(get_request_repository),
+) -> ListResponseSchema:
     with TimingContext() as t:
-        requests = service.list_requests(
+        requests = repo.list_requests(
             status=status,
             type=type,
             priority=priority,
-            limite=limite,
+            limit=limit,
             offset=offset,
         )
 
     logger.info(
-        "Solicitudes listadas",
+        "Requests listed",
         extra={
             "method": "GET",
             "endpoint": "/requests",
@@ -81,56 +80,59 @@ def listar_solicitudes(
             "duration_ms": t.elapsed_ms,
         },
     )
-    items = [SolicitudResponse.model_validate(s.__dict__) for s in requests]
-    return ListaSolicitudesResponse(total=len(items), items=items)
+    items = [ResponseSchema.model_validate(s.__dict__) for s in requests]
+    return ListResponseSchema(total=len(items), items=items)
 
 
 @router.get(
-    "/{id}",
-    response_model=SolicitudResponse,
-    summary="Consultar una request específica",
+    "/{external_id}",
+    response_model=ResponseSchema,
+    summary="Consultar una request específica por external_id",
 )
-def obtener_solicitud(
-    id: UUID,
-    service: RequestService = Depends(get_solicitud_service),
-) -> SolicitudResponse:
+def get_request(
+    external_id: str,
+    repo: RequestRepository = Depends(get_request_repository),
+) -> ResponseSchema:
     with TimingContext() as t:
-        request = service.obtener(id)
+        request = repo.get_by_external_id(external_id)
+        if not request:
+            raise RequestNotFoundError(external_id)
 
     logger.info(
-        "ServiceRequest consultada",
+        "InstitutionalRequest retrieved",
         extra={
-            "request_id": str(id),
+            "external_id": external_id,
             "method": "GET",
-            "endpoint": f"/requests/{id}",
+            "endpoint": f"/requests/{external_id}",
             "status_code": 200,
             "duration_ms": t.elapsed_ms,
         },
     )
-    return SolicitudResponse.model_validate(request.__dict__)
+    return ResponseSchema.model_validate(request.__dict__)
 
 
 @router.patch(
-    "/{id}/status",
-    response_model=SolicitudResponse,
+    "/{external_id}/status",
+    response_model=ResponseSchema,
     summary="Actualizar el status de una request",
 )
 def update_status(
-    id: UUID,
-    body: ActualizarEstadoRequest,
-    service: RequestService = Depends(get_solicitud_service),
-) -> SolicitudResponse:
+    external_id: str,
+    body: UpdateStatusSchema,
+    repo: RequestRepository = Depends(get_request_repository),
+) -> ResponseSchema:
     with TimingContext() as t:
-        request = service.update_status(id, body.status)
+        use_case = UpdateInstitutionalRequestStatus(repo)
+        request = use_case.execute(external_id, body.status)
 
     logger.info(
-        "Status actualizado",
+        "Status updated",
         extra={
-            "request_id": str(id),
+            "external_id": external_id,
             "method": "PATCH",
-            "endpoint": f"/requests/{id}/status",
+            "endpoint": f"/requests/{external_id}/status",
             "status_code": 200,
             "duration_ms": t.elapsed_ms,
         },
     )
-    return SolicitudResponse.model_validate(request.__dict__)
+    return ResponseSchema.model_validate(request.__dict__)

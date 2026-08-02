@@ -1,11 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from app.domain.value_objects.status import Status
-from app.domain.value_objects.priority import Priority
-from app.domain.value_objects.request_type import RequestType
+from app.domain.value_objects import Status, Priority, RequestType
 
-
-class CrearSolicitudRequest(BaseModel):
+class CreateRequestSchema(BaseModel):
     external_id: str = Field(
         ...,
         min_length=1,
@@ -25,6 +22,5 @@ class CrearSolicitudRequest(BaseModel):
             raise ValueError("El campo no puede contener solo espacios")
         return v.strip()
 
-
-class ActualizarEstadoRequest(BaseModel):
+class UpdateStatusSchema(BaseModel):
     status: Status

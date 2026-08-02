@@ -31,8 +31,7 @@ def upgrade() -> None:
 
     op.create_table(
         "requests",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("external_id", sa.String(100), nullable=False, unique=True),
+        sa.Column("external_id", sa.String(100), primary_key=True, index=True),
         sa.Column("type", tipo_enum, nullable=False),
         sa.Column("requester_name", sa.String(200), nullable=False),
         sa.Column("email", sa.String(254), nullable=False),
@@ -54,7 +53,6 @@ def upgrade() -> None:
     )
 
     # Índices individuales
-    op.create_index("ix_solicitudes_identificador_externo", "requests", ["external_id"])
     op.create_index("ix_solicitudes_status", "requests", ["status"])
     op.create_index("ix_solicitudes_tipo", "requests", ["type"])
     op.create_index("ix_solicitudes_priority", "requests", ["priority"])
@@ -72,7 +70,6 @@ def downgrade() -> None:
     op.drop_index("ix_solicitudes_priority")
     op.drop_index("ix_solicitudes_tipo")
     op.drop_index("ix_solicitudes_status")
-    op.drop_index("ix_solicitudes_identificador_externo")
     op.drop_table("requests")
 
     op.execute("DROP TYPE IF EXISTS request_type_enum")

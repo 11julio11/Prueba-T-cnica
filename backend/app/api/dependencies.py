@@ -3,9 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.infrastructure.database.connection import get_db
 from app.infrastructure.database.request_repository_impl import PostgresRequestRepository
-from app.domain.services.request_service import RequestService
+from app.domain.ports.request_repository import RequestRepository
 
 
-def get_solicitud_service(db: Session = Depends(get_db)) -> RequestService:
-    repo = PostgresRequestRepository(db)
-    return RequestService(repo)
+def get_request_repository(db: Session = Depends(get_db)) -> RequestRepository:
+    return PostgresRequestRepository(db)

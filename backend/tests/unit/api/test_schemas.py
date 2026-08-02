@@ -1,13 +1,11 @@
 import pytest
 from pydantic import ValidationError
 
-from app.api.v1.schemas.request_schema import ActualizarEstadoRequest, CrearSolicitudRequest
-from app.domain.value_objects.status import Status
-from app.domain.value_objects.priority import Priority
-from app.domain.value_objects.request_type import RequestType
+from app.api.v1.schemas.request_schema import UpdateStatusSchema, CreateRequestSchema
+from app.domain.value_objects import Status, Priority, RequestType
 
 
-def _payload_valido(**kwargs) -> dict:
+def _valid_payload(**kwargs) -> dict:
     base = {
         "external_id": "EXT-001",
         "type": "technical_support",
@@ -20,65 +18,65 @@ def _payload_valido(**kwargs) -> dict:
     return base
 
 
-class TestCrearSolicitudRequest:
+class TestCreateRequestSchema:
 
-    def test_payload_valido_pasa(self):
-        schema = CrearSolicitudRequest(**_payload_valido())
+    def test_valid_payload_passes(self):
+        schema = CreateRequestSchema(**_valid_payload())
         assert schema.external_id == "EXT-001"
-        assert schema.type == RequestType.SOPORTE_TECNICO
-        assert schema.priority == Priority.ALTA
+        assert schema.type == RequestType.TECHNICAL_SUPPORT
+        assert schema.priority == Priority.HIGH
 
-    def test_correo_invalido_falla(self):
+    def test_invalid_email_fails(self):
         with pytest.raises(ValidationError) as exc_info:
-            CrearSolicitudRequest(**_payload_valido(email="no-es-un-email"))
-        assert "email" in str(exc_info.value).lower() or "email" in str(exc_info.value).lower()
+            CreateRequestSchema(**_valid_payload(email="not-an-email"))
+        assert "email" in str(exc_info.value).lower()
 
-    def test_tipo_invalido_falla(self):
+    def test_invalid_type_fails(self):
         with pytest.raises(ValidationError):
-            CrearSolicitudRequest(**_payload_valido(type="tipo_inexistente"))
+            CreateRequestSchema(**_valid_payload(type="non_existent_type"))
 
-    def test_priority_invalida_falla(self):
+    def test_invalid_priority_fails(self):
         with pytest.raises(ValidationError):
-            CrearSolicitudRequest(**_payload_valido(priority="urgente"))
+            CreateRequestSchema(**_valid_payload(priority="urgent"))
 
-    def test_identificador_externo_vacio_falla(self):
+    def test_empty_external_id_fails(self):
         with pytest.raises(ValidationError):
-            CrearSolicitudRequest(**_payload_valido(external_id=""))
+            CreateRequestSchema(**_valid_payload(external_id=""))
 
-    def test_identificador_solo_espacios_falla(self):
+    def test_space_only_external_id_fails(self):
         with pytest.raises(ValidationError):
-            CrearSolicitudRequest(**_payload_valido(external_id="   "))
+            CreateRequestSchema(**_valid_payload(external_id="   "))
 
-    def test_descripcion_muy_corta_falla(self):
+    def test_short_description_fails(self):
         with pytest.raises(ValidationError):
-            CrearSolicitudRequest(**_payload_valido(description="corta"))
+            CreateRequestSchema(**_valid_payload(description="short"))
 
-    def test_nombre_muy_corto_falla(self):
+    def test_short_name_fails(self):
         with pytest.raises(ValidationError):
-            CrearSolicitudRequest(**_payload_valido(requester_name="A"))
+            CreateRequestSchema(**_valid_payload(requester_name="A"))
 
-    def test_campo_faltante_falla(self):
-        payload = _payload_valido()
+    def test_missing_field_fails(self):
+        payload = _valid_payload()
         del payload["email"]
         with pytest.raises(ValidationError):
-            CrearSolicitudRequest(**payload)
+            CreateRequestSchema(**payload)
 
-    def test_limpia_espacios_en_identificador(self):
-        schema = CrearSolicitudRequest(**_payload_valido(external_id="  EXT-001  "))
+    def test_trims_spaces_in_external_id(self):
+        schema = CreateRequestSchema(**_valid_payload(external_id="  EXT-001  "))
         assert schema.external_id == "EXT-001"
 
 
-class TestActualizarEstadoRequest:
+class TestUpdateStatusSchema:
 
-    def test_status_valido_pasa(self):
-        schema = ActualizarEstadoRequest(status="in_progress")
+    def test_valid_status_passes(self):
+        schema = UpdateStatusSchema(status="in_progress")
         assert schema.status == Status.IN_PROGRESS
 
-    def test_status_invalido_falla(self):
+    def test_invalid_status_fails(self):
         with pytest.raises(ValidationError):
-            ActualizarEstadoRequest(status="pendiente")
+            UpdateStatusSchema(status="pendiente")
 
-    def test_todos_los_statuss_validos(self):
+    def test_all_valid_statuses(self):
         for status in Status:
-            schema = ActualizarEstadoRequest(status=status)
+            schema = UpdateStatusSchema(status=status)
             assert schema.status == status
