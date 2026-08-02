@@ -1,5 +1,5 @@
-import logging
 import json
+import logging
 import time
 from datetime import datetime, timezone
 from typing import Any
@@ -68,7 +68,7 @@ class TimingContext:
         self._start = time.perf_counter()
         return self
 
-    def __exit__(self, *_: Any) -> None:
+    def __exit__(self, *_: object) -> None:
         pass
 
     @property

@@ -2,7 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.domain.value_objects import Status, Priority, RequestType
+from app.domain.value_objects import Priority, RequestType, Status
+
 
 class ResponseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)

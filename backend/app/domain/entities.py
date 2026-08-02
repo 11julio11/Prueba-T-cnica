@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from app.domain.value_objects import Status, Priority, RequestType
+from app.domain.value_objects import Priority, RequestType, Status
+
 
 @dataclass
 class InstitutionalRequest:

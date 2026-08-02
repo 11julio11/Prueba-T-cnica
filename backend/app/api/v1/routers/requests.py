@@ -1,14 +1,16 @@
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.dependencies import get_request_repository
-from app.api.v1.schemas.request_schema import UpdateStatusSchema, CreateRequestSchema
+from app.api.v1.schemas.request_schema import CreateRequestSchema, UpdateStatusSchema
 from app.api.v1.schemas.response_schema import ListResponseSchema, ResponseSchema
+from app.domain.exceptions import RequestNotFoundError
 from app.domain.ports.request_repository import RequestRepository
-from app.domain.use_cases import RegisterInstitutionalRequest, UpdateInstitutionalRequestStatus
-from app.domain.value_objects import Status, Priority, RequestType
-from app.domain.exceptions import RequestNotFoundError, DuplicateExternalIdError
+from app.domain.use_cases import (
+    RegisterInstitutionalRequest,
+    UpdateInstitutionalRequestStatus,
+)
+from app.domain.value_objects import Priority, RequestType, Status
 from app.infrastructure.logging.logger import TimingContext, get_logger
 
 logger = get_logger(__name__)
@@ -55,9 +57,9 @@ def create_request(
     summary="Listar requests con filtros opcionales",
 )
 def list_requests(
-    status: Optional[Status] = Query(None),
-    type: Optional[RequestType] = Query(None),
-    priority: Optional[Priority] = Query(None),
+    status: Status | None = Query(None),
+    type: RequestType | None = Query(None),
+    priority: Priority | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     repo: RequestRepository = Depends(get_request_repository),

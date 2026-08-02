@@ -3,8 +3,9 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, Enum, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.domain.value_objects import Status, Priority, RequestType
+from app.domain.value_objects import Priority, RequestType, Status
 from app.infrastructure.database.connection import Base
+
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)

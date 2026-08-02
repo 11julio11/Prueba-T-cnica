@@ -1,12 +1,11 @@
-from typing import Union
 from uuid import UUID
+
 
 class DomainException(Exception):
     """Base para todas las excepciones de dominio."""
-    pass
 
 class RequestNotFoundError(DomainException):
-    def __init__(self, id: Union[UUID, str]) -> None:
+    def __init__(self, id: UUID | str) -> None:
         self.id = id
         super().__init__(f"Request with id/external_id '{id}' not found")
 

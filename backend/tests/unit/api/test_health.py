@@ -8,7 +8,7 @@ from unittest.mock import patch
 # Inject required env vars before importing anything from app
 os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost/test")
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
 
 class TestHealthEndpoint:

@@ -1,12 +1,12 @@
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
 from app.domain.entities import InstitutionalRequest
 from app.domain.ports.request_repository import RequestRepository
-from app.domain.value_objects import Status, Priority, RequestType
+from app.domain.value_objects import Priority, RequestType, Status
 from app.infrastructure.database.mapper import to_entity, to_model
 from app.infrastructure.database.models import RequestModel
+
 
 class PostgresRequestRepository(RequestRepository):
     def __init__(self, db: Session) -> None:
@@ -29,15 +29,15 @@ class PostgresRequestRepository(RequestRepository):
 
     def get_by_external_id(
         self, external_id: str
-    ) -> Optional[InstitutionalRequest]:
+    ) -> InstitutionalRequest | None:
         model = self._db.get(RequestModel, external_id)
         return to_entity(model) if model else None
 
     def list_requests(
         self,
-        status: Optional[Status] = None,
-        type: Optional[RequestType] = None,
-        priority: Optional[Priority] = None,
+        status: Status | None = None,
+        type: RequestType | None = None,
+        priority: Priority | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[InstitutionalRequest]:

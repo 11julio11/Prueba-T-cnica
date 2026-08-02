@@ -1,8 +1,7 @@
 import pytest
+from app.api.v1.schemas.request_schema import CreateRequestSchema, UpdateStatusSchema
+from app.domain.value_objects import Priority, RequestType, Status
 from pydantic import ValidationError
-
-from app.api.v1.schemas.request_schema import UpdateStatusSchema, CreateRequestSchema
-from app.domain.value_objects import Status, Priority, RequestType
 
 
 def _valid_payload(**kwargs) -> dict:

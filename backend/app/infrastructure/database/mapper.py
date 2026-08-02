@@ -1,6 +1,7 @@
 from app.domain.entities import InstitutionalRequest
 from app.infrastructure.database.models import RequestModel
 
+
 def to_entity(model: RequestModel) -> InstitutionalRequest:
     return InstitutionalRequest(
         external_id=model.external_id,

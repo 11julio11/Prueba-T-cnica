@@ -1,12 +1,13 @@
 import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
 from alembic import context
+from sqlalchemy import engine_from_config, pool
+
+import app.infrastructure.database.models  # noqa: F401
 
 # Importar todos los modelos para que Alembic los detecte
-from app.infrastructure.database.models import Base  # noqa: F401
-import app.infrastructure.database.models  # noqa: F401
+from app.infrastructure.database.models import Base
 
 config = context.config
 

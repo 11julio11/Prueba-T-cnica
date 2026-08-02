@@ -1,9 +1,12 @@
-import pytest
-from unittest.mock import MagicMock
 
-from app.domain.entities import InstitutionalRequest
-from app.domain.value_objects import Status, Priority, RequestType
-from app.domain.exceptions import DuplicateExternalIdError, InvalidStatusTransitionError, RequestNotFoundError
+import pytest
+from app.domain.exceptions import (
+    DuplicateExternalIdError,
+    InvalidStatusTransitionError,
+    RequestNotFoundError,
+)
+from app.domain.value_objects import Status
+
 
 def test_register_institutional_request_success(register_use_case, repo_mock, valid_data):
     repo_mock.get_by_external_id.return_value = None
