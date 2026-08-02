@@ -33,7 +33,7 @@ class TestHealthEndpoint:
 class TestHealthReadyEndpoint:
 
     def test_ready_when_db_connected(self):
-        from app.main import app
+        from backend.app.main import app
         client = TestClient(app, raise_server_exceptions=False)
 
         with patch("backend.app.api.v1.routers.health.check_db_connection", return_value=True):
@@ -42,7 +42,7 @@ class TestHealthReadyEndpoint:
         assert response.json()["status"] == "ready"
 
     def test_not_ready_when_db_unavailable(self):
-        from app.main import app
+        from backend.app.main import app
         client = TestClient(app, raise_server_exceptions=False)
 
         with patch("backend.app.api.v1.routers.health.check_db_connection", return_value=False):

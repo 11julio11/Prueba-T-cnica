@@ -16,6 +16,10 @@ def test_register_institutional_request_success(register_use_case, repo_mock, va
 
     assert result.external_id == valid_data["external_id"]
     assert result.status == Status.RECEIVED
+    assert result.priority == valid_data["priority"]
+    assert result.type == valid_data["type"]
+    assert result.created_at is not None
+    assert result.updated_at is not None
     repo_mock.get_by_external_id.assert_called_once_with(valid_data["external_id"])
     repo_mock.save.assert_called_once()
 
