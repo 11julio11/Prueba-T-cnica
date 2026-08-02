@@ -18,9 +18,9 @@ class CreateRequestSchema(BaseModel):
 
     @field_validator("external_id", "requester_name", "description")
     @classmethod
-    def no_solo_espacios(cls, v: str) -> str:
+    def not_only_spaces(cls, v: str) -> str:
         if not v.strip():
-            raise ValueError("El campo no puede contener solo espacios")
+            raise ValueError("The field cannot contain only spaces")
         return v.strip()
 
 class UpdateStatusSchema(BaseModel):

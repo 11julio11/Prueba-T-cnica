@@ -1,4 +1,4 @@
-"""Crear tabla requests
+"""Create requests table
 
 Revision ID: 001
 Revises:
@@ -14,7 +14,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Crear tipos ENUM primero
+    # Create ENUM types first
     tipo_enum = sa.Enum(
         "platform_access", "technical_support", "academic", "administrative",
         name="request_type_enum",
@@ -51,12 +51,12 @@ def upgrade() -> None:
         ),
     )
 
-    # Índices individuales
+    # Individual indexes
     op.create_index("ix_solicitudes_status", "requests", ["status"])
     op.create_index("ix_solicitudes_tipo", "requests", ["type"])
     op.create_index("ix_solicitudes_priority", "requests", ["priority"])
 
-    # Índice compuesto para filtros frecuentes
+    # Composite index for frequent filters
     op.create_index(
         "ix_requests_status_type_priority",
         "requests",

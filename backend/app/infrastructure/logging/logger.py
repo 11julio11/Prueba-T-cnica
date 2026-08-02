@@ -6,7 +6,7 @@ from typing import Any
 
 
 class JSONFormatter(logging.Formatter):
-    """Formatea cada log como una línea JSON estructurada."""
+    """Formats each log as a structured JSON line."""
 
     SERVICE_NAME = "requests-api"
 
@@ -19,7 +19,7 @@ class JSONFormatter(logging.Formatter):
             "logger": record.name,
         }
 
-        # Campos opcionales enriquecidos
+        # Enriched optional fields
         for field in (
             "request_id",
             "external_id",
@@ -49,7 +49,7 @@ def setup_logging(log_level: str = "INFO") -> None:
     root.handlers.clear()
     root.addHandler(handler)
 
-    # Silenciar logs muy verbosos de librerías externas
+    # Silence verbose logs from external libraries
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
@@ -59,7 +59,7 @@ def get_logger(name: str) -> logging.Logger:
 
 
 class TimingContext:
-    """Contexto para medir duración de operaciones."""
+    """Context for measuring operation duration."""
 
     def __init__(self) -> None:
         self._start: float = 0.0

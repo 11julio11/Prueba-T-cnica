@@ -11,149 +11,149 @@ Accept: application/json
 ###
 
 ### Create Request – Support (201 Created)
-POST http://localhost:8000/api/v1/solicitudes
+POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "identificador_externo": "EXT-TEST-001",
-  "tipo": "soporte_tecnico",
-  "nombre_solicitante": "Test User",
-  "correo": "test.user@example.com",
-  "descripcion": "No puedo acceder al sistema de notas desde ayer en la mañana",
-  "prioridad": "alta"
+  "external_id": "EXT-TEST-001",
+  "type": "technical_support",
+  "requester_name": "Test User",
+  "email": "test.user@example.com",
+  "description": "No puedo acceder al sistema de notas desde ayer en la mañana",
+  "priority": "high"
 }
 
 ###
 
 ### Create Request – Platform Access (201 Created)
-POST http://localhost:8000/api/v1/solicitudes
+POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "identificador_externo": "EXT-TEST-002",
-  "tipo": "acceso_plataforma",
-  "nombre_solicitante": "Test User Two",
-  "correo": "user2@example.com",
-  "descripcion": "Necesito acceso al módulo de reportes financieros",
-  "prioridad": "media"
+  "external_id": "EXT-TEST-002",
+  "type": "platform_access",
+  "requester_name": "Test User Two",
+  "email": "user2@example.com",
+  "description": "Necesito acceso al módulo de reportes financieros",
+  "priority": "medium"
 }
 
 ###
 
 ### Create Request – Academic (201 Created)
-POST http://localhost:8000/api/v1/solicitudes
+POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "identificador_externo": "EXT-TEST-003",
-  "tipo": "academica",
-  "nombre_solicitante": "Test User Three",
-  "correo": "user3@example.com",
-  "descripcion": "Solicitud de corrección de notas del segundo semestre según acta adjunta",
-  "prioridad": "baja"
+  "external_id": "EXT-TEST-003",
+  "type": "academic",
+  "requester_name": "Test User Three",
+  "email": "user3@example.com",
+  "description": "Solicitud de corrección de notas del segundo semestre según acta adjunta",
+  "priority": "low"
 }
 
 ###
 
 ### Create Request – DUPLICATE identifier (409 Conflict)
-POST http://localhost:8000/api/v1/solicitudes
+POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "identificador_externo": "EXT-TEST-001",
-  "tipo": "soporte_tecnico",
-  "nombre_solicitante": "Test User",
-  "correo": "test.user@example.com",
-  "descripcion": "Intento de duplicar el identificador EXT-TEST-001",
-  "prioridad": "baja"
+  "external_id": "EXT-TEST-001",
+  "type": "technical_support",
+  "requester_name": "Test User",
+  "email": "test.user@example.com",
+  "description": "Intento de duplicar el identificador EXT-TEST-001",
+  "priority": "low"
 }
 
 ###
 
 ### Create Request – Invalid email (422 Unprocessable Entity)
-POST http://localhost:8000/api/v1/solicitudes
+POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "identificador_externo": "EXT-ERR-001",
-  "tipo": "soporte_tecnico",
-  "nombre_solicitante": "Test User",
-  "correo": "esto-no-es-un-correo",
-  "descripcion": "Descripción lo suficientemente larga para pasar la validación mínima",
-  "prioridad": "alta"
+  "external_id": "EXT-ERR-001",
+  "type": "technical_support",
+  "requester_name": "Test User",
+  "email": "esto-no-es-un-correo",
+  "description": "Descripción lo suficientemente larga para pasar la validación mínima",
+  "priority": "high"
 }
 
 ###
 
 ### Create Request – Invalid catalog value (422 Unprocessable Entity)
-POST http://localhost:8000/api/v1/solicitudes
+POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "identificador_externo": "EXT-ERR-002",
-  "tipo": "tipo_que_no_existe",
-  "nombre_solicitante": "Test User",
-  "correo": "test@example.com",
-  "descripcion": "Descripción lo suficientemente larga para pasar la validación mínima",
-  "prioridad": "alta"
+  "external_id": "EXT-ERR-002",
+  "type": "tipo_que_no_existe",
+  "requester_name": "Test User",
+  "email": "test@example.com",
+  "description": "Descripción lo suficientemente larga para pasar la validación mínima",
+  "priority": "high"
 }
 
 ###
 
 ### List all requests
-GET http://localhost:8000/api/v1/solicitudes
+GET http://localhost:8000/api/v1/requests
 Accept: application/json
 
 ###
 
 ### List requests – filter by estado
-GET http://localhost:8000/api/v1/solicitudes?estado=recibida
+GET http://localhost:8000/api/v1/requests?status=received
 Accept: application/json
 
 ###
 
 ### List requests – filter by tipo and prioridad
-GET http://localhost:8000/api/v1/solicitudes?tipo=soporte_tecnico&prioridad=alta
+GET http://localhost:8000/api/v1/requests?type=technical_support&priority=high
 Accept: application/json
 
 ###
 
 ### Get specific request – replace <id> with a real UUID from POST response
-GET http://localhost:8000/api/v1/solicitudes/<id>
+GET http://localhost:8000/api/v1/requests/<id>
 Accept: application/json
 
 ###
 
 ### Get request – non-existent UUID (404 Not Found)
-GET http://localhost:8000/api/v1/solicitudes/00000000-0000-0000-0000-000000000000
+GET http://localhost:8000/api/v1/requests/00000000-0000-0000-0000-000000000000
 Accept: application/json
 
 ###
 
 ### Update estado → en_proceso (replace <id> with a real UUID)
-PATCH http://localhost:8000/api/v1/solicitudes/<id>/estado
+PATCH http://localhost:8000/api/v1/requests/<id>/status
 Content-Type: application/json
 
 {
-  "estado": "en_proceso"
+  "status": "in_progress"
 }
 
 ###
 
 ### Update estado → completada
-PATCH http://localhost:8000/api/v1/solicitudes/<id>/estado
+PATCH http://localhost:8000/api/v1/requests/<id>/status
 Content-Type: application/json
 
 {
-  "estado": "completada"
+  "status": "completed"
 }
 
 ###
 
 ### Update estado – invalid value (422 Unprocessable Entity)
-PATCH http://localhost:8000/api/v1/solicitudes/<id>/estado
+PATCH http://localhost:8000/api/v1/requests/<id>/status
 Content-Type: application/json
 
 {
-  "estado": "pendiente"
+  "status": "pendiente"
 }

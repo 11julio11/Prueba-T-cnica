@@ -18,11 +18,11 @@ class RegisterInstitutionalRequest:
         description: str,
         priority: Priority,
     ) -> InstitutionalRequest:
-        existente = self._repo.get_by_external_id(external_id)
-        if existente:
+        existing = self._repo.get_by_external_id(external_id)
+        if existing:
             raise DuplicateExternalIdError(external_id)
 
-        nueva_solicitud = InstitutionalRequest(
+        new_request = InstitutionalRequest(
             external_id=external_id,
             type=type,
             requester_name=requester_name,
@@ -30,18 +30,18 @@ class RegisterInstitutionalRequest:
             description=description,
             priority=priority,
         )
-        self._repo.save(nueva_solicitud)
-        return nueva_solicitud
+        self._repo.save(new_request)
+        return new_request
 
 class UpdateInstitutionalRequestStatus:
     def __init__(self, repo: RequestRepository) -> None:
         self._repo = repo
 
     def execute(self, external_id: str, new_status: Status) -> InstitutionalRequest:
-        solicitud = self._repo.get_by_external_id(external_id)
-        if not solicitud:
+        request_obj = self._repo.get_by_external_id(external_id)
+        if not request_obj:
             raise RequestNotFoundError(external_id)
 
-        solicitud.update_status(new_status)
-        self._repo.save(solicitud)
-        return solicitud
+        request_obj.update_status(new_status)
+        self._repo.save(request_obj)
+        return request_obj

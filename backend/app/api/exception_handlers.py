@@ -61,5 +61,5 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"detail": "Error interno del servidor"},
+            content={"detail": "Internal server error"},
         )

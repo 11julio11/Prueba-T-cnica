@@ -6,12 +6,12 @@ from app.infrastructure.database.connection import check_db_connection
 router = APIRouter(tags=["Health"])
 
 
-@router.get("/health", summary="Verificar disponibilidad de la API")
+@router.get("/health", summary="Check API availability")
 def health() -> dict:
     return {"status": "ok", "service": "requests-api"}
 
 
-@router.get("/health/ready", summary="Verificar conexión con PostgreSQL")
+@router.get("/health/ready", summary="Check PostgreSQL connection")
 def health_ready() -> JSONResponse:
     db_ok = check_db_connection()
     if db_ok:
