@@ -6,7 +6,7 @@ from pydantic import ValidationError
 
 def _valid_payload(**kwargs) -> dict:
     base = {
-        "external_id": "EXT-001",
+        "external_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
         "type": "technical_support",
         "requester_name": "Test User",
         "email": "test.user@example.com",
@@ -21,7 +21,7 @@ class TestCreateRequestSchema:
 
     def test_valid_payload_passes(self):
         schema = CreateRequestSchema(**_valid_payload())
-        assert schema.external_id == "EXT-001"
+        assert str(schema.external_id) == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
         assert schema.type == RequestType.TECHNICAL_SUPPORT
         assert schema.priority == Priority.HIGH
 
@@ -42,10 +42,6 @@ class TestCreateRequestSchema:
         with pytest.raises(ValidationError):
             CreateRequestSchema(**_valid_payload(external_id=""))
 
-    def test_space_only_external_id_fails(self):
-        with pytest.raises(ValidationError):
-            CreateRequestSchema(**_valid_payload(external_id="   "))
-
     def test_short_description_fails(self):
         with pytest.raises(ValidationError):
             CreateRequestSchema(**_valid_payload(description="short"))
@@ -60,9 +56,7 @@ class TestCreateRequestSchema:
         with pytest.raises(ValidationError):
             CreateRequestSchema(**payload)
 
-    def test_trims_spaces_in_external_id(self):
-        schema = CreateRequestSchema(**_valid_payload(external_id="  EXT-001  "))
-        assert schema.external_id == "EXT-001"
+
 
 
 class TestUpdateStatusSchema:

@@ -2,7 +2,7 @@ from uuid import UUID
 
 
 class DomainException(Exception):
-    """Base para todas las excepciones de dominio."""
+    """Base for all domain exceptions."""
 
 class RequestNotFoundError(DomainException):
     def __init__(self, id: UUID | str) -> None:

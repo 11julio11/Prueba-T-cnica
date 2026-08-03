@@ -78,12 +78,14 @@ class InfrastructureStack(Stack):
                 image=ecs.ContainerImage.from_asset("../../"),
                 container_port=8000,
                 environment={
-                    "POSTGRES_USER": db_secret.secret_value_from_json("username").unsafe_unwrap(),
-                    "POSTGRES_PASSWORD": db_secret.secret_value_from_json("password").unsafe_unwrap(),
                     "POSTGRES_DB": "requests_db",
                     "POSTGRES_HOST": db_instance.db_instance_endpoint_address,
                     "RABBITMQ_URL": email_queue.queue_url, # Abstracted SQS Queue as message broker
                     "QUEUE_PROVIDER": "sqs"
+                },
+                secrets={
+                    "POSTGRES_USER": ecs.Secret.from_secrets_manager(db_secret, "username"),
+                    "POSTGRES_PASSWORD": ecs.Secret.from_secrets_manager(db_secret, "password")
                 }
             ),
             public_load_balancer=True
@@ -103,12 +105,14 @@ class InfrastructureStack(Stack):
         consumer_task.add_container("ConsumerContainer",
             image=ecs.ContainerImage.from_asset("../../", file="consumer/Dockerfile"),
             environment={
-                "POSTGRES_USER": db_secret.secret_value_from_json("username").unsafe_unwrap(),
-                "POSTGRES_PASSWORD": db_secret.secret_value_from_json("password").unsafe_unwrap(),
                 "POSTGRES_DB": "requests_db",
                 "POSTGRES_HOST": db_instance.db_instance_endpoint_address,
                 "RABBITMQ_URL": email_queue.queue_url,
                 "QUEUE_PROVIDER": "sqs"
+            },
+            secrets={
+                "POSTGRES_USER": ecs.Secret.from_secrets_manager(db_secret, "username"),
+                "POSTGRES_PASSWORD": ecs.Secret.from_secrets_manager(db_secret, "password")
             },
             logging=ecs.LogDrivers.aws_logs(stream_prefix="ConsumerLog")
         )

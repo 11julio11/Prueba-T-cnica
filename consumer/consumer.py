@@ -61,6 +61,17 @@ MAX_DELAY_S = float(os.getenv("MAX_DELAY_S", "30.0"))
 TIMEOUT_S = float(os.getenv("TIMEOUT_S", "10.0"))
 STARTUP_WAIT_S = float(os.getenv("STARTUP_WAIT_S", "5.0"))
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    pg_user = os.getenv("POSTGRES_USER")
+    pg_pass = os.getenv("POSTGRES_PASSWORD")
+    pg_host = os.getenv("POSTGRES_HOST")
+    pg_db = os.getenv("POSTGRES_DB")
+    if pg_user and pg_pass and pg_host and pg_db:
+        DATABASE_URL = f"postgresql://{pg_user}:{pg_pass}@{pg_host}/{pg_db}"
+    else:
+        DATABASE_URL = "postgresql://test:test@localhost:5432/test"
+
 
 # ── Example requests ────────────────────────────────────────────────────
 
@@ -119,38 +130,35 @@ SOLICITUDES: list[dict] = [
 
 # ── Simple HTTP without external dependencies ─────────────────────────────────────
 
-import urllib.request
-import urllib.error
-
+import httpx
 
 def http_post(url: str, payload: dict, timeout: float) -> tuple[int, dict]:
-    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
     start = time.perf_counter()
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
+        with httpx.Client(timeout=timeout) as client:
+            resp = client.post(url, json=payload)
+            body = resp.json()
             duration = int((time.perf_counter() - start) * 1000)
-            return resp.status, body
-    except urllib.error.HTTPError as e:
-        body = json.loads(e.read().decode("utf-8")) if e.fp else {}
-        return e.code, body
-
+            return resp.status_code, body
+    except httpx.HTTPStatusError as e:
+        body = e.response.json() if e.response.content else {}
+        return e.response.status_code, body
+    except httpx.RequestError as e:
+        # Re-raise as RequestError for the caller
+        raise e
 
 def http_get(url: str, timeout: float) -> tuple[int, dict]:
     start = time.perf_counter()
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
-            return resp.status, body
-    except urllib.error.HTTPError as e:
-        body = json.loads(e.read().decode("utf-8")) if e.fp else {}
-        return e.code, body
+        with httpx.Client(timeout=timeout) as client:
+            resp = client.get(url)
+            body = resp.json()
+            return resp.status_code, body
+    except httpx.HTTPStatusError as e:
+        body = e.response.json() if e.response.content else {}
+        return e.response.status_code, body
+    except httpx.RequestError as e:
+        raise e
 
 
 # ── Retry logic ───────────────────────────────────────────────────────────
@@ -225,7 +233,7 @@ def post_con_retry(
                 },
             )
 
-        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        except (httpx.RequestError, TimeoutError, OSError) as exc:
             duration = int((time.perf_counter() - start) * 1000)
             log.warning(
                 "Connection error, retrying",
@@ -354,7 +362,7 @@ def main() -> None:
                     },
                 )
 
-    log.info("Consumidor finalizado correctamente")
+    log.info("Consumer successfully completed")
 
 
 if __name__ == "__main__":

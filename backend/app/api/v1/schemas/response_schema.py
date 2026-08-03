@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 from backend.app.domain.value_objects import Priority, RequestType, Status
 
@@ -11,7 +11,7 @@ class ResponseSchema(BaseModel):
     external_id: str
     type: RequestType
     requester_name: str
-    email: str
+    email: EmailStr
     description: str
     priority: Priority
     status: Status

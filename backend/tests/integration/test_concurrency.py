@@ -11,7 +11,7 @@ from backend.app.domain.value_objects import Priority, RequestType
 @pytest.fixture
 def valid_data() -> dict:
     return {
-        "external_id": "EXT-CONC-001",
+        "external_id": "11111111-1111-4111-a111-111111111111",
         "type": RequestType.TECHNICAL_SUPPORT,
         "requester_name": "Test User",
         "email": "test.user@example.com",
@@ -43,6 +43,6 @@ def test_repository_handles_concurrent_inserts(valid_data):
     with pytest.raises(DuplicateExternalIdError) as exc_info:
         repo.save(request)
 
-    assert exc_info.value.external_id == "EXT-CONC-001"
+    assert str(exc_info.value.external_id) == "11111111-1111-4111-a111-111111111111"
     session_mock.rollback.assert_called_once()
 

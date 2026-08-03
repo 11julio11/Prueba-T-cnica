@@ -31,11 +31,14 @@ architecture-beta
     service rds(database)[RDS PostgreSQL] in private
     service sqs(server)[SQS Message Queue] in aws
     service consumer(server)[Consumer ECS Fargate] in private
+    service secrets(cloud)[AWS Secrets Manager] in aws
     
     alb:R --> L:backend
     backend:R --> L:rds
     backend:T --> B:sqs
     sqs:L --> R:consumer
+    backend:B --> T:secrets
+    consumer:B --> T:secrets
 ```
 
 ## 3. Gestión de Tráfico y Balanceo de Carga
@@ -77,6 +80,12 @@ En el diseño y evolución futura, estos conceptos cumplen roles separados:
 
 - **Autenticación (AuthN):** Responde a *"¿Quién eres?"*. Verificar la identidad del usuario que hace la solicitud, típicamente conectando la API con Amazon Cognito o validando tokens JWT externos.
 - **Autorización (AuthZ):** Responde a *"¿Tienes permiso para esto?"*. Una vez que sabemos quién es el usuario, el backend valida sus roles (ej. `ADMIN`, `SUPPORT`). Esto asegura que un usuario regular solo pueda crear solicitudes, mientras que un agente de soporte puede transicionar el estado a 'procesado'.
+
+### Gestión de Credenciales y Secretos
+- **AWS Secrets Manager:** Nunca se hardcodean credenciales. La contraseña maestra de la base de datos PostgreSQL se autogenera y almacena cifrada (KMS) en Secrets Manager. 
+- **Inyección en Tiempo de Ejecución (ECS):** En lugar de inyectar las credenciales como variables de entorno de texto plano (vulnerabilidad *OWASP A02: Secrets Exposure*), la definición de contenedores (Task Definition) mapea el ARN del secreto para que el agente ECS resuelva la credencial directamente en la memoria del contenedor de forma dinámica, manteniendo la consola y el código fuente libres de información sensible.
+
+> **Defensa Técnica (OWASP):** *"Cualquier información sensible, como la clave maestra de PostgreSQL, se almacena en Secrets Manager. Usamos el mapeo nativo de ECS para inyectar credenciales directamente a los contenedores, evitando exponerlas en variables de entorno estáticas y previniendo la vulnerabilidad de exposición de secretos (OWASP A02)"*.
 
 ## 7. Instrucciones de Despliegue (CDK)
 

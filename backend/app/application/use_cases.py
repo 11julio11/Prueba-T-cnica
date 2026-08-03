@@ -3,6 +3,7 @@ from backend.app.domain.entities import InstitutionalRequest
 from backend.app.domain.exceptions import DuplicateExternalIdError, RequestNotFoundError
 from backend.app.domain.ports.request_repository import RequestRepository
 from backend.app.domain.value_objects import Priority, RequestType, Status
+from pydantic import EmailStr, UUID4
 
 
 class RegisterInstitutionalRequest:
@@ -11,10 +12,10 @@ class RegisterInstitutionalRequest:
 
     def execute(
         self,
-        external_id: str,
+        external_id: UUID4,
         type: RequestType,
         requester_name: str,
-        email: str,
+        email: EmailStr,
         description: str,
         priority: Priority,
     ) -> InstitutionalRequest:
@@ -27,6 +28,7 @@ class RegisterInstitutionalRequest:
             type=type,
             requester_name=requester_name,
             email=email,
+            status=Status.RECEIVED,
             description=description,
             priority=priority,
         )
@@ -46,3 +48,35 @@ class UpdateInstitutionalRequestStatus:
         request.update_status(new_status)
         self._repo.save(request)
         return request
+
+
+class GetInstitutionalRequest:
+    def __init__(self, repo: RequestRepository) -> None:
+        self._repo = repo
+
+    def execute(self, external_id: str) -> InstitutionalRequest:
+        request = self._repo.get_by_external_id(external_id)
+        if not request:
+            raise RequestNotFoundError(external_id)
+        return request
+
+
+class ListInstitutionalRequests:
+    def __init__(self, repo: RequestRepository) -> None:
+        self._repo = repo
+
+    def execute(
+        self,
+        status: Status | None = None,
+        type: RequestType | None = None,
+        priority: Priority | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[InstitutionalRequest]:
+        return self._repo.list_requests(
+            status=status,
+            type=type,
+            priority=priority,
+            limit=limit,
+            offset=offset,
+        )

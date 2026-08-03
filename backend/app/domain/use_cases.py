@@ -14,7 +14,7 @@ class RegisterInstitutionalRequest:
         external_id: str,
         type: RequestType,
         requester_name: str,
-        email: str,
+        email: EmailStr,
         description: str,
         priority: Priority,
     ) -> InstitutionalRequest:

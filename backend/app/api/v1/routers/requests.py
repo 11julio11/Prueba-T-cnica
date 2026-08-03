@@ -7,6 +7,8 @@ from backend.app.api.v1.schemas.response_schema import ListResponseSchema, Respo
 from backend.app.domain.exceptions import RequestNotFoundError
 from backend.app.domain.ports.request_repository import RequestRepository
 from backend.app.application.use_cases import (
+    GetInstitutionalRequest,
+    ListInstitutionalRequests,
     RegisterInstitutionalRequest,
     UpdateInstitutionalRequestStatus,
 )
@@ -65,7 +67,8 @@ def list_requests(
     repo: RequestRepository = Depends(get_request_repository),
 ) -> ListResponseSchema:
     with TimingContext() as t:
-        requests = repo.list_requests(
+        use_case = ListInstitutionalRequests(repo)
+        requests = use_case.execute(
             status=status,
             type=type,
             priority=priority,
@@ -96,9 +99,8 @@ def get_request(
     repo: RequestRepository = Depends(get_request_repository),
 ) -> ResponseSchema:
     with TimingContext() as t:
-        request = repo.get_by_external_id(external_id)
-        if not request:
-            raise RequestNotFoundError(external_id)
+        use_case = GetInstitutionalRequest(repo)
+        request = use_case.execute(external_id)
 
     logger.info(
         "InstitutionalRequest retrieved",
