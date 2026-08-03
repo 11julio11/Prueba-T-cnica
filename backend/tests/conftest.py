@@ -1,5 +1,4 @@
 import os
-from unittest.mock import MagicMock
 
 # Inject a dummy DATABASE_URL so that Pydantic Settings doesn't fail during test collection
 os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost/test")

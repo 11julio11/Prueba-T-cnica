@@ -17,7 +17,7 @@ def test_register_institutional_request_success(register_use_case, fake_repo, va
     assert result.type == valid_data["type"]
     assert result.created_at is not None
     assert result.updated_at is not None
-    
+
     # We verify that it was saved in the in-memory repository
     saved_req = fake_repo.get_by_external_id(valid_data["external_id"])
     assert saved_req is not None
@@ -39,7 +39,7 @@ def test_update_institutional_request_status_success(update_use_case, fake_repo,
     result = update_use_case.execute(existing_request.external_id, Status.IN_PROGRESS)
 
     assert result.status is Status.IN_PROGRESS
-    
+
     # Verify in-memory state changed
     saved_req = fake_repo.get_by_external_id(existing_request.external_id)
     assert saved_req.status is Status.IN_PROGRESS
@@ -74,18 +74,18 @@ def test_list_institutional_requests(list_use_case, fake_repo, existing_request)
     fake_repo.save(existing_request)
 
     results = list_use_case.execute()
-    
+
     assert len(results) == 1
     assert results[0].external_id == existing_request.external_id
 
 
 def test_list_institutional_requests_with_filters(list_use_case, fake_repo, existing_request):
     fake_repo.save(existing_request)
-    
+
     # Save another request with different properties
     from backend.app.domain.entities import InstitutionalRequest
     from backend.app.domain.value_objects import Priority, RequestType, Status
-    
+
     other_request = InstitutionalRequest(
         external_id="3d813cbb-47fb-42ba-91df-831e1593ac29",
         type=RequestType.ADMINISTRATIVE,

@@ -1,3 +1,4 @@
+from pydantic import EmailStr
 
 from backend.app.domain.entities import InstitutionalRequest
 from backend.app.domain.exceptions import DuplicateExternalIdError, RequestNotFoundError
