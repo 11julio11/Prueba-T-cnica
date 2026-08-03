@@ -10,7 +10,7 @@ class InstitutionalRequest(pydantic.BaseModel):
     email: pydantic.EmailStr
     description: str
     priority: Priority
-    status: Status
+    status: Status = Status.RECEIVED
     created_at: datetime = pydantic.Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
