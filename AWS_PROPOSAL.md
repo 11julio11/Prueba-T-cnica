@@ -12,6 +12,17 @@ Antes de detallar el despliegue en la nube, es fundamental entender el "por qué
 - **Estrategia de Pruebas Unitarias (Enfoque en Casos de Uso):**
   Los tests unitarios no prueban las entidades o modelos de forma aislada y anémica. Siguiendo las prácticas modernas de desarrollo y diseño de software, los tests atacan directamente los **Casos de Uso**. El caso de uso es la capa que orquesta las entidades, aplica las reglas del negocio y coordina con los repositorios. Testear a este nivel asegura que estamos probando el *comportamiento y las reglas de negocio reales* que aportan valor al usuario, y no simplemente testeando el estado interno de un objeto de Python. Además, nos permite inyectar dependencias simuladas (Mocks) para probar escenarios complejos como la concurrencia.
 
+### Monitoreo (Opcional - pero recomendado)
+- Habilitar métricas detalladas en el ALB, RDS, ECS y SQS mediante **CloudWatch**.
+- Usar **X-Ray** para tracing de las peticiones entre ALB -> ECS -> RDS / SQS -> ECS.
+
+### Mejoras Adicionales de Seguridad y Operación
+- **Healthchecks Seguros:** Configurar healthchecks exhaustivos (deep healthchecks) tanto a nivel de ALB como a nivel de base de datos para asegurar el correcto funcionamiento end-to-end.
+- **Registro de Imágenes (ECR):** Utilizar Amazon Elastic Container Registry (ECR) con escaneo de vulnerabilidades (Trivy/Clair) integrado antes del despliegue en ECS.
+- **Certificados SSL (ACM):** Añadir un Amazon Certificate Manager (ACM) al Application Load Balancer para asegurar que toda la comunicación HTTPS está cifrada en tránsito.
+- **IAM Least Privilege:** Ajustar roles IAM separando explícitamente `task_role` (acceso a AWS, RDS, SQS) del `execution_role` (pull ECR, CloudWatch Logs).
+- **Estrategia de Reversión (Rollback):** Configurar AWS CodeDeploy (Blue/Green) para los servicios de ECS, permitiendo una rápida recuperación (rollback) si los monitores de CloudWatch detectan un error.
+
 - **Modelado Cloud-Native Serverless:**
   En lugar de usar servidores EC2 tradicionales, se optó por AWS Fargate (Serverless). Esto remueve la carga operativa de parchear y administrar sistemas operativos. El consumidor HTTP se ejecuta independientemente y simula el tráfico de peticiones para asegurar resiliencia y pruebas de carga constantes.
 
@@ -21,45 +32,56 @@ El siguiente diagrama detalla cómo interactúan los componentes en la nube de A
 
 ```mermaid
 flowchart TD
+    Internet([Internet / Usuarios])
+
     subgraph AWS [AWS Cloud]
         Secrets[(AWS Secrets Manager)]
         CW[AWS CloudWatch]
         XRay[AWS X-Ray / OTEL]
+        ECR[Amazon ECR]
 
         subgraph VPC [VPC]
             subgraph Public [Public Subnet]
-                ALB{{Application Load Balancer}}
+                ALB{{Application Load Balancer\nHTTP :80 / HTTPS :443}}
             end
 
-            subgraph Private [Private Subnet]
-                Consumer[Consumer ECS Fargate]
-                Backend[Backend ECS Fargate]
-                RDS[(RDS PostgreSQL)]
+            subgraph Private [Private Subnet - EGRESS]
+                Backend[Backend ECS Fargate\nFastAPI :8000]
+                Consumer[Consumer ECS Fargate\nSimulador de carga HTTP]
+                RDS[(RDS PostgreSQL\nMulti-AZ)]
             end
         end
     end
 
-    Consumer -->|HTTP Requests| ALB
-    ALB -->|Rutas /api/v1| Backend
-    Backend -->|PostgreSQL Protocol| RDS
+    Internet -->|HTTPS| ALB
+    Consumer -->|HTTP Requests /api/v1| ALB
+    ALB -->|Puerto 8000| Backend
+    Backend -->|TCP 5432| RDS
 
-    %% Secrets
-    Backend -.->|Lee Credenciales| Secrets
-    Consumer -.->|Lee Credenciales| Secrets
+    ECR -..->|Pull imagen| Backend
+    ECR -..->|Pull imagen| Consumer
 
-    %% Telemetría
-    Backend -.->|Logs| CW
-    Consumer -.->|Logs| CW
-    Backend -.->|Trazas| XRay
-    Consumer -.->|Trazas| XRay
+    Backend -..->|Lee DB password| Secrets
+    Consumer -..->|Lee credenciales| Secrets
 
-    classDef aws fill:#FF9900,color:#232F3E,stroke:#232F3E;
+    Backend -..->|Structured JSON Logs| CW
+    Consumer -..->|Logs| CW
+    ALB -..->|Access Logs| CW
+    Backend -..->|Trazas distribuidas| XRay
+
+    classDef aws fill:#FF9900,color:#232F3E,stroke:#232F3E,font-weight:bold;
     classDef vpc fill:#00A4A6,color:white,stroke:#232F3E;
-    classDef subnet fill:#E9F3F7,color:#232F3E,stroke:#00A4A6,stroke-dasharray: 5 5;
-    
+    classDef subnet fill:#E9F3F7,color:#232F3E,stroke:#00A4A6,stroke-dasharray:5 5;
+    classDef service fill:#1A73E8,color:white,stroke:#0D47A1;
+    classDef storage fill:#34A853,color:white,stroke:#1B5E20;
+    classDef infra fill:#9C27B0,color:white,stroke:#6A1B9A;
+
     class AWS aws;
     class VPC vpc;
     class Public,Private subnet;
+    class Backend,Consumer service;
+    class RDS storage;
+    class ALB,ECR infra;
 ```
 
 ## 3. Gestión de Tráfico y Balanceo de Carga

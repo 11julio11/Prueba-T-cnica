@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Prueba Técnica Backend – Solicitudes Institucionales",
-		"description": "Colección para probar el servicio de gestión de requests institucionales. Base URL: http://localhost:8000",
+		"description": "Colección para probar el servicio de gestión de solicitudes institucionales. Base URL: http://localhost:8000\n\nFlujo recomendado:\n1. Ejecutar request 3 (Crear) → captura automáticamente `request_id` en `external_id`\n2. Usar requests 12-16 con la variable `{{request_id}}`",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -13,7 +13,8 @@
 		{
 			"key": "request_id",
 			"value": "",
-			"type": "string"
+			"type": "string",
+			"description": "Se auto-rellena al ejecutar el request 3 (Crear solicitud)"
 		}
 	],
 	"item": [
@@ -26,7 +27,8 @@
 					"raw": "{{base_url}}/health",
 					"host": ["{{base_url}}"],
 					"path": ["health"]
-				}
+				},
+				"description": "Verifica que la API está en línea. Responde 200 {\"status\": \"ok\"} siempre."
 			},
 			"response": []
 		},
@@ -39,21 +41,25 @@
 					"raw": "{{base_url}}/health/ready",
 					"host": ["{{base_url}}"],
 					"path": ["health", "ready"]
-				}
+				},
+				"description": "Verifica la conexión activa con PostgreSQL. Responde 200 si la BD está disponible, 503 si no."
 			},
 			"response": []
 		},
 		{
-			"name": "3. Crear ServiceRequest – Soporte Técnico (201)",
+			"name": "3. Crear Solicitud – Soporte Técnico (201)",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
 							"var json = pm.response.json();",
-							"pm.collectionVariables.set('request_id', json.id);",
-							"pm.test('Status 201', function(){ pm.response.to.have.status(201); });",
-							"pm.test('Status inicial es received', function(){ pm.expect(json.status).to.eql('received'); });"
+							"// La API retorna external_id como identificador público",
+							"pm.collectionVariables.set('request_id', json.external_id);",
+							"pm.test('Status 201 Created', function(){ pm.response.to.have.status(201); });",
+							"pm.test('Estado inicial es received', function(){ pm.expect(json.status).to.eql('received'); });",
+							"pm.test('external_id presente', function(){ pm.expect(json.external_id).to.be.a('string'); });",
+							"pm.test('Tipo correcto', function(){ pm.expect(json.type).to.eql('technical_support'); });"
 						],
 						"type": "text/javascript"
 					}
@@ -66,19 +72,20 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"external_id\": \"EXT-TEST-001\",\n    \"type\": \"technical_support\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"test.user@example.com\",\n    \"description\": \"No puedo acceder al sistema de notas desde ayer en la mañana\",\n    \"priority\": \"high\"\n}",
+					"raw": "{\n    \"external_id\": \"123e4567-e89b-12d3-a456-426614174001\",\n    \"type\": \"technical_support\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"test.user@example.com\",\n    \"description\": \"No puedo acceder al sistema de notas desde ayer en la mañana\",\n    \"priority\": \"high\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
 					"raw": "{{base_url}}/api/v1/requests",
 					"host": ["{{base_url}}"],
 					"path": ["api", "v1", "requests"]
-				}
+				},
+				"description": "Crea una nueva solicitud institucional. Guarda automáticamente `external_id` en la variable de colección `request_id`."
 			},
 			"response": []
 		},
 		{
-			"name": "4. Crear ServiceRequest – Acceso Plataforma (201)",
+			"name": "4. Crear Solicitud – Acceso a Plataforma (201)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -86,7 +93,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"external_id\": \"EXT-TEST-002\",\n    \"type\": \"platform_access\",\n    \"requester_name\": \"Test User Two\",\n    \"email\": \"user2@example.com\",\n    \"description\": \"Necesito acceso al módulo de reportes financieros\",\n    \"priority\": \"medium\"\n}",
+					"raw": "{\n    \"external_id\": \"223e4567-e89b-12d3-a456-426614174002\",\n    \"type\": \"platform_access\",\n    \"requester_name\": \"Test User Two\",\n    \"email\": \"user2@example.com\",\n    \"description\": \"Necesito acceso al módulo de reportes financieros del departamento\",\n    \"priority\": \"medium\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
@@ -98,7 +105,7 @@
 			"response": []
 		},
 		{
-			"name": "5. Crear ServiceRequest – Académica (201)",
+			"name": "5. Crear Solicitud – Académica (201)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -106,7 +113,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"external_id\": \"EXT-TEST-003\",\n    \"type\": \"academic\",\n    \"requester_name\": \"Test User Three\",\n    \"email\": \"user3@example.com\",\n    \"description\": \"ServiceRequest de corrección de notas del segundo semestre según acta adjunta\",\n    \"priority\": \"high\"\n}",
+					"raw": "{\n    \"external_id\": \"323e4567-e89b-12d3-a456-426614174003\",\n    \"type\": \"academic\",\n    \"requester_name\": \"Test User Three\",\n    \"email\": \"user3@example.com\",\n    \"description\": \"Solicitud de corrección de notas del segundo semestre según acta adjunta\",\n    \"priority\": \"high\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
@@ -118,7 +125,7 @@
 			"response": []
 		},
 		{
-			"name": "6. Crear ServiceRequest – DUPLICADA (409)",
+			"name": "6. Crear Solicitud – Administrativa (201)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -126,7 +133,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"external_id\": \"EXT-TEST-001\",\n    \"type\": \"technical_support\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"test.user@example.com\",\n    \"description\": \"Intento duplicar el identificador EXT-TEST-001\",\n    \"priority\": \"low\"\n}",
+					"raw": "{\n    \"external_id\": \"423e4567-e89b-12d3-a456-426614174004\",\n    \"type\": \"administrative\",\n    \"requester_name\": \"Test User Four\",\n    \"email\": \"user4@example.com\",\n    \"description\": \"Solicitud de permiso administrativo para ausencia laboral del próximo mes\",\n    \"priority\": \"low\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
@@ -138,7 +145,22 @@
 			"response": []
 		},
 		{
-			"name": "7. Crear ServiceRequest – Email Inválido (422)",
+			"name": "7. Crear Solicitud – DUPLICADA (409)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 409 Conflict', function(){ pm.response.to.have.status(409); });",
+							"pm.test('Error de duplicado en respuesta', function(){",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.detail).to.include('123e4567-e89b-12d3-a456-426614174001');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [
@@ -146,19 +168,31 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"external_id\": \"EXT-ERR-001\",\n    \"type\": \"technical_support\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"esto-no-es-un-email\",\n    \"description\": \"Descripción lo suficientemente larga para pasar la validación mínima\",\n    \"priority\": \"high\"\n}",
+					"raw": "{\n    \"external_id\": \"123e4567-e89b-12d3-a456-426614174001\",\n    \"type\": \"technical_support\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"test.user@example.com\",\n    \"description\": \"Intento duplicar el external_id 123e4567-e89b-12d3-a456-426614174001\",\n    \"priority\": \"low\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
 					"raw": "{{base_url}}/api/v1/requests",
 					"host": ["{{base_url}}"],
 					"path": ["api", "v1", "requests"]
-				}
+				},
+				"description": "Debe devolver 409 porque el external_id ya existe (ejecutar después del request 3)."
 			},
 			"response": []
 		},
 		{
-			"name": "8. Crear ServiceRequest – Tipo Inválido (422)",
+			"name": "8. Crear Solicitud – Email Inválido (422)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 422 Unprocessable Entity', function(){ pm.response.to.have.status(422); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [
@@ -166,7 +200,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"external_id\": \"EXT-ERR-002\",\n    \"type\": \"tipo_que_no_existe\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"test@example.com\",\n    \"description\": \"Descripción lo suficientemente larga para pasar la validación mínima\",\n    \"priority\": \"high\"\n}",
+					"raw": "{\n    \"external_id\": \"523e4567-e89b-12d3-a456-426614174005\",\n    \"type\": \"technical_support\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"esto-no-es-un-email\",\n    \"description\": \"Descripción lo suficientemente larga para pasar la validación mínima\",\n    \"priority\": \"high\"\n}",
 					"options": {"raw": {"language": "json"}}
 				},
 				"url": {
@@ -178,7 +212,55 @@
 			"response": []
 		},
 		{
-			"name": "9. Listar Todas las Solicitudes",
+			"name": "9. Crear Solicitud – Tipo Inválido (422)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 422 Unprocessable Entity', function(){ pm.response.to.have.status(422); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"external_id\": \"623e4567-e89b-12d3-a456-426614174006\",\n    \"type\": \"tipo_que_no_existe\",\n    \"requester_name\": \"Test User\",\n    \"email\": \"test@example.com\",\n    \"description\": \"Descripción lo suficientemente larga para pasar la validación mínima\",\n    \"priority\": \"high\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/requests",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "requests"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "10. Listar Todas las Solicitudes",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 200 OK', function(){ pm.response.to.have.status(200); });",
+							"pm.test('Respuesta tiene items y total', function(){",
+							"    var json = pm.response.json();",
+							"    pm.expect(json).to.have.property('items');",
+							"    pm.expect(json).to.have.property('total');",
+							"    pm.expect(json.items).to.be.an('array');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -186,12 +268,13 @@
 					"raw": "{{base_url}}/api/v1/requests",
 					"host": ["{{base_url}}"],
 					"path": ["api", "v1", "requests"]
-				}
+				},
+				"description": "Lista todas las solicitudes. Responde con {total, items[]}."
 			},
 			"response": []
 		},
 		{
-			"name": "10. Listar con Filtro – status=received",
+			"name": "11. Listar con Filtro – status=received",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -200,12 +283,13 @@
 					"host": ["{{base_url}}"],
 					"path": ["api", "v1", "requests"],
 					"query": [{"key": "status", "value": "received"}]
-				}
+				},
+				"description": "Filtra por estado. Valores válidos: received, in_progress, completed, rejected."
 			},
 			"response": []
 		},
 		{
-			"name": "11. Listar con Filtro – type y priority",
+			"name": "12. Listar con Filtro – type y priority",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -217,12 +301,46 @@
 						{"key": "type", "value": "technical_support"},
 						{"key": "priority", "value": "high"}
 					]
-				}
+				},
+				"description": "Filtra por tipo y prioridad combinados. Tipos válidos: technical_support, platform_access, academic, administrative."
 			},
 			"response": []
 		},
 		{
-			"name": "12. Obtener ServiceRequest por ID (variable)",
+			"name": "13. Listar con Paginación – limit y offset",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v1/requests?limit=2&offset=0",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "requests"],
+					"query": [
+						{"key": "limit", "value": "2"},
+						{"key": "offset", "value": "0"}
+					]
+				},
+				"description": "Paginación: limit (1-500) y offset (>=0)."
+			},
+			"response": []
+		},
+		{
+			"name": "14. Obtener Solicitud por external_id (variable)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 200 OK', function(){ pm.response.to.have.status(200); });",
+							"pm.test('external_id coincide', function(){",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.external_id).to.eql(pm.collectionVariables.get('request_id'));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -230,12 +348,24 @@
 					"raw": "{{base_url}}/api/v1/requests/{{request_id}}",
 					"host": ["{{base_url}}"],
 					"path": ["api", "v1", "requests", "{{request_id}}"]
-				}
+				},
+				"description": "Obtiene una solicitud por su external_id (UUID). Requiere haber ejecutado el request 3 primero."
 			},
 			"response": []
 		},
 		{
-			"name": "13. Obtener ServiceRequest – ID Inexistente (404)",
+			"name": "15. Obtener Solicitud – ID Inexistente (404)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 404 Not Found', function(){ pm.response.to.have.status(404); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -243,12 +373,27 @@
 					"raw": "{{base_url}}/api/v1/requests/00000000-0000-0000-0000-000000000000",
 					"host": ["{{base_url}}"],
 					"path": ["api", "v1", "requests", "00000000-0000-0000-0000-000000000000"]
-				}
+				},
+				"description": "UUID válido pero inexistente → 404."
 			},
 			"response": []
 		},
 		{
-			"name": "14. Actualizar Status → in_progress (200)",
+			"name": "16. Actualizar Status → in_progress (200)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 200 OK', function(){ pm.response.to.have.status(200); });",
+							"pm.test('Estado actualizado a in_progress', function(){",
+							"    pm.expect(pm.response.json().status).to.eql('in_progress');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "PATCH",
 				"header": [
@@ -263,12 +408,27 @@
 					"raw": "{{base_url}}/api/v1/requests/{{request_id}}/status",
 					"host": ["{{base_url}}"],
 					"path": ["api", "v1", "requests", "{{request_id}}", "status"]
-				}
+				},
+				"description": "Transición válida: received → in_progress."
 			},
 			"response": []
 		},
 		{
-			"name": "15. Actualizar Status → completed (200)",
+			"name": "17. Actualizar Status → completed (200)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 200 OK', function(){ pm.response.to.have.status(200); });",
+							"pm.test('Estado actualizado a completed', function(){",
+							"    pm.expect(pm.response.json().status).to.eql('completed');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "PATCH",
 				"header": [
@@ -283,12 +443,45 @@
 					"raw": "{{base_url}}/api/v1/requests/{{request_id}}/status",
 					"host": ["{{base_url}}"],
 					"path": ["api", "v1", "requests", "{{request_id}}", "status"]
-				}
+				},
+				"description": "Transición válida: in_progress → completed."
 			},
 			"response": []
 		},
 		{
-			"name": "16. Actualizar Status – Status Inválido (422)",
+			"name": "18. Actualizar Status → rejected (200)",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"status\": \"rejected\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/requests/{{request_id}}/status",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "requests", "{{request_id}}", "status"]
+				},
+				"description": "Transición: cualquier estado → rejected."
+			},
+			"response": []
+		},
+		{
+			"name": "19. Actualizar Status – Status Inválido (422)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 422 Unprocessable Entity', function(){ pm.response.to.have.status(422); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "PATCH",
 				"header": [
@@ -303,7 +496,40 @@
 					"raw": "{{base_url}}/api/v1/requests/{{request_id}}/status",
 					"host": ["{{base_url}}"],
 					"path": ["api", "v1", "requests", "{{request_id}}", "status"]
+				},
+				"description": "Status inválido → 422. Valores válidos: received, in_progress, completed, rejected."
+			},
+			"response": []
+		},
+		{
+			"name": "20. Actualizar Status – ID Inexistente (404)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 404 Not Found', function(){ pm.response.to.have.status(404); });"
+						],
+						"type": "text/javascript"
+					}
 				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{"key": "Content-Type", "value": "application/json", "type": "text"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"status\": \"in_progress\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/requests/00000000-0000-0000-0000-000000000000/status",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "requests", "00000000-0000-0000-0000-000000000000", "status"]
+				},
+				"description": "UUID inexistente → 404."
 			},
 			"response": []
 		}

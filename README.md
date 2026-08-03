@@ -88,23 +88,27 @@ En lugar de probar entidades anémicas de forma aislada, los tests unitarios est
 graph LR
     subgraph API ["Capa API (FastAPI)"]
         R["Routers\n/requests\n/health"]
-        S["Pydantic Schemas\nRequest / Response"]
-        EH["Manejador Excepciones\nMapeo a HTTP"]
+        S["Pydantic Schemas\nCreateRequest / Response\nListResponse"]
+        EH["Manejador Excepciones\nMapeo a HTTP 404/409/422"]
         R --> S
+        R --> EH
     end
 
     subgraph DOMAIN ["Capa Dominio (Python Puro)"]
-        SVC["Casos de Uso\nRegisterInstitutionalRequest"]
+        UC1["RegisterInstitutionalRequest"]
+        UC2["ListInstitutionalRequests"]
+        UC3["GetInstitutionalRequest"]
+        UC4["UpdateInstitutionalRequestStatus"]
         ENT["Entidad\nInstitutionalRequest"]
         PORT["RequestRepository\nPuerto Abstracto"]
-        EXC["Excepciones Dominio\nDuplicateExternalIdError"]
-        SVC --> ENT
-        SVC --> PORT
-        SVC --> EXC
+        EXC["Excepciones Dominio\nDuplicateExternalIdError\nRequestNotFoundError\nInvalidStatusTransitionError"]
+        UC1 & UC2 & UC3 & UC4 --> ENT
+        UC1 & UC2 & UC3 & UC4 --> PORT
+        UC1 & UC4 --> EXC
     end
 
     subgraph INFRA ["Capa Infraestructura (SQLAlchemy)"]
-        REPO["Implementación Repositorio\nPostgreSQL"]
+        REPO["RequestRepositoryImpl\nPostgreSQL"]
         MAPPER["Mapper\nORM ↔ Entidad"]
         MODEL["Modelo SQLAlchemy\nRequestModel"]
         CONN["Conexión BD\nEngine / Session"]
@@ -113,7 +117,7 @@ graph LR
         REPO --> CONN
     end
 
-    R -->|"Inyección (Depends)"| SVC
+    R -->|"Depends()"| UC1 & UC2 & UC3 & UC4
     PORT -.->|"Implementado por"| REPO
 ```
 
@@ -133,9 +137,9 @@ graph LR
 | Método | Ruta | Descripción |
 |---|---|---|
 | `POST` | `/api/v1/requests` | Crear una nueva solicitud |
-| `GET` | `/api/v1/requests` | Listar solicitudes (con filtros) |
-| `GET` | `/api/v1/requests/{id}` | Obtener una solicitud específica por UUID |
-| `PATCH` | `/api/v1/requests/{id}/status` | Actualizar el estado de una solicitud |
+| `GET` | `/api/v1/requests` | Listar solicitudes (`?status`, `?type`, `?priority`, `?limit`, `?offset`) |
+| `GET` | `/api/v1/requests/{external_id}` | Obtener una solicitud por su UUID externo |
+| `PATCH` | `/api/v1/requests/{external_id}/status` | Actualizar el estado de una solicitud |
 | `GET` | `/health` | Chequeo de disponibilidad de la API |
 | `GET` | `/health/ready` | Chequeo de conexión con PostgreSQL |
 
