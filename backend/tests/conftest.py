@@ -4,14 +4,15 @@ import os
 os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost/test")
 
 import pytest
-from backend.app.domain.entities import InstitutionalRequest
-from backend.app.domain.ports.request_repository import RequestRepository
+
 from backend.app.application.use_cases import (
     GetInstitutionalRequest,
     ListInstitutionalRequests,
     RegisterInstitutionalRequest,
     UpdateInstitutionalRequestStatus,
 )
+from backend.app.domain.entities import InstitutionalRequest
+from backend.app.domain.ports.request_repository import RequestRepository
 from backend.app.domain.value_objects import Priority, RequestType, Status
 
 
@@ -20,6 +21,10 @@ class FakeRequestRepository(RequestRepository):
         self._db: dict[str, InstitutionalRequest] = {}
 
     def save(self, request: InstitutionalRequest) -> InstitutionalRequest:
+        existing = self._db.get(str(request.external_id))
+        if existing and id(existing) != id(request):
+            from backend.app.domain.exceptions import DuplicateExternalIdError
+            raise DuplicateExternalIdError(request.external_id)
         self._db[str(request.external_id)] = request
         return request
 

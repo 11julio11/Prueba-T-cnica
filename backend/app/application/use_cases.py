@@ -1,9 +1,10 @@
 
+from pydantic import UUID4, EmailStr
+
 from backend.app.domain.entities import InstitutionalRequest
-from backend.app.domain.exceptions import DuplicateExternalIdError, RequestNotFoundError
+from backend.app.domain.exceptions import RequestNotFoundError
 from backend.app.domain.ports.request_repository import RequestRepository
 from backend.app.domain.value_objects import Priority, RequestType, Status
-from pydantic import EmailStr, UUID4
 
 
 class RegisterInstitutionalRequest:

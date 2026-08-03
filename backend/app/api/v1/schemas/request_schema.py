@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, UUID4
+from pydantic import UUID4, BaseModel, EmailStr, Field
 
 from backend.app.domain.value_objects import Priority, RequestType, Status
 

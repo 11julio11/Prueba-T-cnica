@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, UUID4
+from pydantic import UUID4, BaseModel, ConfigDict, EmailStr
 
 from backend.app.domain.value_objects import Priority, RequestType, Status
 

@@ -1,15 +1,15 @@
-import pytest
+import uuid
+
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
 
-from backend.app.main import app
 from backend.app.infrastructure.database.connection import Base, get_db
-from backend.app.infrastructure.database.models import RequestModel
+from backend.app.main import app
 
 # Create an in-memory SQLite database
 engine = create_engine(
-    "sqlite:///:memory:", 
+    "sqlite:///:memory:",
     connect_args={"check_same_thread": False},
     poolclass=pool.StaticPool
 )
@@ -28,8 +28,7 @@ app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
-import uuid
-
+client = TestClient(app)
 def create_request_helper():
     response = client.post(
         "/api/v1/requests",
@@ -47,7 +46,7 @@ def create_request_helper():
     assert data["type"] == "technical_support"
     assert data["requester_name"] == "John Doe"
     assert "external_id" in data
-    
+
     return data["external_id"]
 
 def test_create_request():
@@ -56,7 +55,7 @@ def test_create_request():
 def test_list_requests():
     # Insert one to make sure list isn't empty
     create_request_helper()
-    
+
     response = client.get("/api/v1/requests")
     assert response.status_code == 200
     data = response.json()

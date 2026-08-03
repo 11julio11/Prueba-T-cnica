@@ -43,7 +43,7 @@ class JSONFormatter(logging.Formatter):
 
 def setup_logging(log_level: str = "INFO") -> None:
     formatter = JSONFormatter()
-    
+
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
 

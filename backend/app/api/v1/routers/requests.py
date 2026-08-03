@@ -2,15 +2,21 @@
 from fastapi import APIRouter, Depends, Query, status
 
 from backend.app.api.dependencies import get_request_repository
-from backend.app.api.v1.schemas.request_schema import CreateRequestSchema, UpdateStatusSchema
-from backend.app.api.v1.schemas.response_schema import ListResponseSchema, ResponseSchema
-from backend.app.domain.ports.request_repository import RequestRepository
+from backend.app.api.v1.schemas.request_schema import (
+    CreateRequestSchema,
+    UpdateStatusSchema,
+)
+from backend.app.api.v1.schemas.response_schema import (
+    ListResponseSchema,
+    ResponseSchema,
+)
 from backend.app.application.use_cases import (
     GetInstitutionalRequest,
     ListInstitutionalRequests,
     RegisterInstitutionalRequest,
     UpdateInstitutionalRequestStatus,
 )
+from backend.app.domain.ports.request_repository import RequestRepository
 from backend.app.domain.value_objects import Priority, RequestType, Status
 from backend.app.infrastructure.logging.logger import TimingContext, get_logger
 

@@ -1,5 +1,6 @@
 
 import pytest
+
 from backend.app.domain.exceptions import (
     DuplicateExternalIdError,
     InvalidStatusTransitionError,

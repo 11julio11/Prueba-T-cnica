@@ -1,5 +1,6 @@
 import enum
 
+
 class Status(enum.StrEnum):
     RECEIVED = enum.auto()
     IN_PROGRESS = enum.auto()

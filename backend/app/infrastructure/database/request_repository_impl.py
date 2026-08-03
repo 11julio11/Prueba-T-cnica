@@ -1,7 +1,7 @@
+import uuid
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-import uuid
-from typing import Optional
 
 from backend.app.domain.entities import InstitutionalRequest
 from backend.app.domain.exceptions import DuplicateExternalIdError
@@ -17,15 +17,21 @@ class PostgresRequestRepository(RequestRepository):
 
     def save(self, request: InstitutionalRequest) -> InstitutionalRequest:
         try:
-            model = to_model(request)
-            model = self._db.merge(model)
+            model = self._db.get(RequestModel, request.external_id)
+            if model:
+                model.status = request.status
+                model.updated_at = request.updated_at
+            else:
+                model = to_model(request)
+                self._db.add(model)
             self._db.commit()
+            self._db.refresh(model)
             return to_entity(model)
         except IntegrityError:
             self._db.rollback()
             raise DuplicateExternalIdError(request.external_id)
 
-    def update_status(self, external_id: str, new_status: str) -> Optional[InstitutionalRequest]:
+    def update_status(self, external_id: str, new_status: str) -> InstitutionalRequest | None:
         if isinstance(external_id, str):
             parsed_id = uuid.UUID(external_id)
         else:
@@ -33,7 +39,7 @@ class PostgresRequestRepository(RequestRepository):
         model = self._db.get(RequestModel, parsed_id)
         return to_entity(model) if model else None
 
-    def get_by_external_id(self, external_id: str) -> Optional[InstitutionalRequest]:
+    def get_by_external_id(self, external_id: str) -> InstitutionalRequest | None:
         if isinstance(external_id, str):
             parsed_id = uuid.UUID(external_id)
         else:

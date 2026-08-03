@@ -1,12 +1,16 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.app.domain.entities import InstitutionalRequest
 from backend.app.domain.exceptions import DuplicateExternalIdError
-from backend.app.infrastructure.database.request_repository_impl import PostgresRequestRepository
 from backend.app.domain.value_objects import Priority, RequestType
+from backend.app.infrastructure.database.request_repository_impl import (
+    PostgresRequestRepository,
+)
+
 
 @pytest.fixture
 def valid_data() -> dict:
