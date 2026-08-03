@@ -19,9 +19,7 @@ class RegisterInstitutionalRequest:
         description: str,
         priority: Priority,
     ) -> InstitutionalRequest:
-        existing = self._repo.get_by_external_id(external_id)
-        if existing:
-            raise DuplicateExternalIdError(external_id)
+
 
         new_request = InstitutionalRequest(
             external_id=external_id,

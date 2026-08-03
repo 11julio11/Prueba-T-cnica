@@ -23,11 +23,7 @@ class InfrastructureStack(Stack):
             nat_gateways=1
         )
 
-        # 2. SQS Queue for Email notifications
-        email_queue = sqs.Queue(
-            self, "EmailNotificationQueue",
-            queue_name="email-notification-queue"
-        )
+
 
         # 3. RDS PostgreSQL Database
         # Secret for DB Credentials
@@ -46,7 +42,7 @@ class InfrastructureStack(Stack):
             engine=rds.DatabaseInstanceEngine.postgres(version=rds.PostgresEngineVersion.VER_15),
             vpc=vpc,
             credentials=rds.Credentials.from_secret(db_secret),
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
             instance_type=ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
             allocated_storage=20,
             max_allocated_storage=50,
@@ -79,9 +75,7 @@ class InfrastructureStack(Stack):
                 container_port=8000,
                 environment={
                     "POSTGRES_DB": "requests_db",
-                    "POSTGRES_HOST": db_instance.db_instance_endpoint_address,
-                    "RABBITMQ_URL": email_queue.queue_url, # Abstracted SQS Queue as message broker
-                    "QUEUE_PROVIDER": "sqs"
+                    "POSTGRES_HOST": db_instance.db_instance_endpoint_address
                 },
                 secrets={
                     "POSTGRES_USER": ecs.Secret.from_secrets_manager(db_secret, "username"),
@@ -94,7 +88,6 @@ class InfrastructureStack(Stack):
 
         # Grant permissions
         db_secret.grant_read(backend_service.task_definition.task_role)
-        email_queue.grant_send_messages(backend_service.task_definition.task_role)
 
         # 6. Consumer Application (Worker via Fargate)
         consumer_task = ecs.FargateTaskDefinition(
@@ -108,8 +101,7 @@ class InfrastructureStack(Stack):
             environment={
                 "POSTGRES_DB": "requests_db",
                 "POSTGRES_HOST": db_instance.db_instance_endpoint_address,
-                "RABBITMQ_URL": email_queue.queue_url,
-                "QUEUE_PROVIDER": "sqs"
+                "API_BASE_URL": "http://" + backend_service.load_balancer.load_balancer_dns_name + "/api/v1"
             },
             secrets={
                 "POSTGRES_USER": ecs.Secret.from_secrets_manager(db_secret, "username"),
@@ -128,7 +120,6 @@ class InfrastructureStack(Stack):
 
         # Grant permissions to consumer
         db_secret.grant_read(consumer_task.task_role)
-        email_queue.grant_consume_messages(consumer_task.task_role)
 
         # Outputs
         CfnOutput(self, "ApiUrl", value=backend_service.load_balancer.load_balancer_dns_name)

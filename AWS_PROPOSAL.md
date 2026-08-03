@@ -114,8 +114,30 @@ Aplicamos el principio de menor privilegio en la red:
   Utiliza **Application Auto Scaling**. Si el uso promedio de CPU/Memoria excede el 70% durante 2 minutos, Fargate aprovisiona más contenedores dinámicamente (Scale-Out) y los registra en el ALB. Cuando la carga disminuye, remueve las instancias (Scale-In).
 - **Capa Asíncrona / Simulación (Consumer):**
   La escalabilidad del consumidor puede ajustarse lanzando múltiples tareas Fargate en paralelo para simular tráfico pesado y probar los límites del Load Balancer y la API principal.
-- **Base de Datos (Amazon RDS):**
-  Desplegada en configuración **Multi-AZ** para conmutación por error automática (Failover) en caso de caída del servidor principal. Para escalar las lecturas de los analistas, se pueden añadir *Read Replicas*.
+
+### 5.4. HTTPS y Certificados (ACM)
+Para garantizar el cifrado en tránsito, el **Application Load Balancer (ALB)** tendrá asociado un certificado SSL/TLS gestionado por **AWS Certificate Manager (ACM)**. El ALB terminará la conexión HTTPS y reenviará el tráfico al backend (ECS Fargate) a través de HTTP por la VPC privada.
+
+### 5.5. IAM (Identity and Access Management)
+El principio de mínimo privilegio regirá la comunicación:
+- **Task Execution Role (ECS)**: Permiso para que ECS extraiga imágenes de ECR y escriba logs en CloudWatch.
+- **Task Role (Backend)**: Permisos de lectura (`secretsmanager:GetSecretValue`) únicamente al secreto específico de la BD.
+- **Task Role (Consumer)**: Idéntico al backend, solo lectura de credenciales.
+
+## 6. Estrategia de Reversión y Alertas (Resiliencia Adicional)
+
+### 6.1. Estrategia de Reversión (Rollback)
+Dado que usamos ECS Fargate, el despliegue usará **ECS Rolling Update**:
+1. Se levantan las nuevas tareas (vN).
+2. Se registran en el Target Group del ALB.
+3. Se verifican los Health Checks.
+4. Si los Health Checks fallan repetidamente, ECS detiene las tareas vN y el tráfico sigue hacia la vN-1 sin interrupción.
+
+### 6.2. Alertas y Monitoreo Proactivo
+Se configurarán **CloudWatch Alarms** vinculadas a un tópico SNS para notificar al equipo vía email/Slack en los siguientes casos:
+1. **Errores 5xx del ALB**: Si la tasa de errores supera el 1% en un período de 5 minutos.
+2. **CPU/Memoria de Fargate**: Si el uso supera el 80% sostenido por 10 minutos (indicador de que el auto-scaling no está dando abasto o hay un leak).
+3. **Estado de la BD (RDS)**: Si el uso de CPU > 90% o las conexiones concurrentes se acercan al límite máximo.
 
 ## 6. Seguridad: Autenticación vs Autorización
 

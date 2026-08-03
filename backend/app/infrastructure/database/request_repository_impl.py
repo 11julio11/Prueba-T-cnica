@@ -17,18 +17,9 @@ class PostgresRequestRepository(RequestRepository):
 
     def save(self, request: InstitutionalRequest) -> InstitutionalRequest:
         try:
-            model = self._db.get(RequestModel, request.external_id)
-            if model:
-                # Update
-                model.status = request.status
-                model.updated_at = request.updated_at
-            else:
-                # Create
-                model = to_model(request)
-                self._db.add(model)
-
+            model = to_model(request)
+            model = self._db.merge(model)
             self._db.commit()
-            self._db.refresh(model)
             return to_entity(model)
         except IntegrityError:
             self._db.rollback()

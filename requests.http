@@ -45,7 +45,7 @@ POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "external_id": "EXT-TEST-003",
+  "external_id": "323e4567-e89b-12d3-a456-426614174003",
   "type": "academic",
   "requester_name": "Test User Three",
   "email": "user3@example.com",
@@ -75,7 +75,7 @@ POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "external_id": "EXT-ERR-001",
+  "external_id": "423e4567-e89b-12d3-a456-426614174004",
   "type": "technical_support",
   "requester_name": "Test User",
   "email": "esto-no-es-un-correo",
@@ -90,7 +90,7 @@ POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "external_id": "EXT-ERR-002",
+  "external_id": "523e4567-e89b-12d3-a456-426614174005",
   "type": "tipo_que_no_existe",
   "requester_name": "Test User",
   "email": "test@example.com",
@@ -118,8 +118,8 @@ Accept: application/json
 
 ###
 
-### Get specific request – replace <id> with a real UUID from POST response
-GET http://localhost:8000/api/v1/requests/<id>
+### Get specific request – replace <external_id> with a real UUID from POST response
+GET http://localhost:8000/api/v1/requests/<external_id>
 Accept: application/json
 
 ###
@@ -130,8 +130,8 @@ Accept: application/json
 
 ###
 
-### Update estado → en_proceso (replace <id> with a real UUID)
-PATCH http://localhost:8000/api/v1/requests/<id>/status
+### Update estado → en_proceso (replace <external_id> with a real UUID)
+PATCH http://localhost:8000/api/v1/requests/<external_id>/status
 Content-Type: application/json
 
 {
@@ -141,7 +141,7 @@ Content-Type: application/json
 ###
 
 ### Update estado → completada
-PATCH http://localhost:8000/api/v1/requests/<id>/status
+PATCH http://localhost:8000/api/v1/requests/<external_id>/status
 Content-Type: application/json
 
 {
@@ -151,7 +151,7 @@ Content-Type: application/json
 ###
 
 ### Update estado – invalid value (422 Unprocessable Entity)
-PATCH http://localhost:8000/api/v1/requests/<id>/status
+PATCH http://localhost:8000/api/v1/requests/<external_id>/status
 Content-Type: application/json
 
 {
