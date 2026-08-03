@@ -30,7 +30,7 @@ def upgrade() -> None:
 
     op.create_table(
         "requests",
-        sa.Column("external_id", sa.String(100), primary_key=True, index=True),
+        sa.Column("external_id", sa.Uuid(), primary_key=True, index=True),
         sa.Column("type", tipo_enum, nullable=False),
         sa.Column("requester_name", sa.String(200), nullable=False),
         sa.Column("email", sa.String(254), nullable=False),

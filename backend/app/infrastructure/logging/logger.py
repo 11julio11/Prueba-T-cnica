@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import time
 from datetime import datetime, timezone
 from typing import Any
@@ -37,17 +38,24 @@ class JSONFormatter(logging.Formatter):
         if record.exc_info:
             log_entry["exception"] = self.formatException(record.exc_info)
 
-        return json.dumps(log_entry, ensure_ascii=False)
+        return json.dumps(log_entry, ensure_ascii=False, default=str)
 
 
 def setup_logging(log_level: str = "INFO") -> None:
-    handler = logging.StreamHandler()
-    handler.setFormatter(JSONFormatter())
+    formatter = JSONFormatter()
+    
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+
+    os.makedirs("logs", exist_ok=True)
+    file_handler = logging.FileHandler("logs/api.log")
+    file_handler.setFormatter(formatter)
 
     root = logging.getLogger()
     root.setLevel(getattr(logging, log_level.upper(), logging.INFO))
     root.handlers.clear()
-    root.addHandler(handler)
+    root.addHandler(stream_handler)
+    root.addHandler(file_handler)
 
     # Silence verbose logs from external libraries
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)

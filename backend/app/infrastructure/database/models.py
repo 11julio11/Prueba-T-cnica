@@ -1,6 +1,7 @@
+import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Enum, Index, String, Text
+from sqlalchemy import DateTime, Enum, Index, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.app.domain.value_objects import Priority, RequestType, Status
@@ -13,8 +14,8 @@ def _utcnow() -> datetime:
 class RequestModel(Base):
     __tablename__ = "requests"
 
-    external_id: Mapped[str] = mapped_column(
-        String(100),
+    external_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         primary_key=True,
         index=True,
     )

@@ -2,7 +2,11 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from backend.app.domain.exceptions import DuplicateExternalIdError, RequestNotFoundError
+from backend.app.domain.exceptions import (
+    DuplicateExternalIdError,
+    InvalidStatusTransitionError,
+    RequestNotFoundError,
+)
 from backend.app.infrastructure.logging.logger import get_logger
 
 logger = get_logger(__name__)
@@ -20,6 +24,19 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(InvalidStatusTransitionError)
+    async def handle_invalid_status_transition(
+        request: Request, exc: InvalidStatusTransitionError
+    ) -> JSONResponse:
+        logger.warning(
+            "Invalid status transition",
+            extra={"error": str(exc), "endpoint": str(request.url.path)},
+        )
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content={"detail": str(exc)},
         )
 

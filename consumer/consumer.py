@@ -10,6 +10,7 @@ import logging
 import os
 import random
 import time
+import sys
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -77,7 +78,7 @@ if not DATABASE_URL:
 
 SOLICITUDES: list[dict] = [
     {
-        "external_id": "CONS-001",
+        "external_id": "123e4567-e89b-12d3-a456-426614174001",
         "type": "technical_support",
         "requester_name": "Ana Martínez",
         "email": "ana.martinez@institucion.edu.co",
@@ -85,7 +86,7 @@ SOLICITUDES: list[dict] = [
         "priority": "high",
     },
     {
-        "external_id": "CONS-002",
+        "external_id": "123e4567-e89b-12d3-a456-426614174002",
         "type": "platform_access",
         "requester_name": "Carlos Pérez",
         "email": "carlos.perez@institucion.edu.co",
@@ -93,7 +94,7 @@ SOLICITUDES: list[dict] = [
         "priority": "medium",
     },
     {
-        "external_id": "CONS-003",
+        "external_id": "123e4567-e89b-12d3-a456-426614174003",
         "type": "academic",
         "requester_name": "Laura Gómez",
         "email": "laura.gomez@institucion.edu.co",
@@ -101,7 +102,7 @@ SOLICITUDES: list[dict] = [
         "priority": "high",
     },
     {
-        "external_id": "CONS-004",
+        "external_id": "123e4567-e89b-12d3-a456-426614174004",
         "type": "administrative",
         "requester_name": "Juan Rodríguez",
         "email": "juan.rodriguez@institucion.edu.co",
@@ -109,7 +110,7 @@ SOLICITUDES: list[dict] = [
         "priority": "low",
     },
     {
-        "external_id": "CONS-005",
+        "external_id": "123e4567-e89b-12d3-a456-426614174005",
         "type": "technical_support",
         "requester_name": "María López",
         "email": "maria.lopez@institucion.edu.co",
@@ -118,7 +119,7 @@ SOLICITUDES: list[dict] = [
     },
     # Intentionally invalid request to test 4xx error handling
     {
-        "external_id": "CONS-ERR",
+        "external_id": "123e4567-e89b-12d3-a456-426614174006",
         "type": "tipo_invalido",          # non-existent catalog value
         "requester_name": "Test Error",
         "email": "no-es-email",          # invalid email
@@ -196,7 +197,7 @@ def post_con_retry(
                     "ServiceRequest creada exitosamente",
                     extra={
                         "external_id": identificador,
-                        "request_id": body.get("id"),
+                        "request_id": body.get("external_id"),
                         "attempt": attempt,
                         "status_code": status_code,
                         "duration_ms": duration,
@@ -344,23 +345,26 @@ def main() -> None:
         extra={"creadas": len(resultados), "fallidas": len(SOLICITUDES) - len(resultados)},
     )
 
-    # ── Phase 2: check status of created ones ───────────────────────────────
-    if resultados:
-        log.info("Consultando status de requests creadas")
-        time.sleep(2)
+    if not resultados:
+        log.error("Ninguna solicitud fue creada exitosamente.")
+        sys.exit(1)
 
-        for item in resultados:
-            status_actual = consultar_status(item["id"])
-            if status_actual:
-                log.info(
-                    "Resumen de request",
-                    extra={
-                        "request_id": item["id"],
-                        "external_id": item["external_id"],
-                        "status": status_actual["status"],
-                        "priority": status_actual["priority"],
-                    },
-                )
+    # ── Phase 2: check status of created ones ───────────────────────────────
+    log.info("Consultando status de requests creadas")
+    time.sleep(2)
+
+    for item in resultados:
+        status_actual = consultar_status(item["external_id"])
+        if status_actual:
+            log.info(
+                "Resumen de request",
+                extra={
+                    "request_id": item["external_id"],
+                    "external_id": item["external_id"],
+                    "status": status_actual["status"],
+                    "priority": status_actual["priority"],
+                },
+            )
 
     log.info("Consumer successfully completed")
 

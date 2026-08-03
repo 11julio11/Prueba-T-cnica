@@ -75,7 +75,7 @@ class InfrastructureStack(Stack):
             memory_limit_mib=512,
             desired_count=2,
             task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
-                image=ecs.ContainerImage.from_asset("../../"),
+                image=ecs.ContainerImage.from_asset("../../", file="backend/Dockerfile"),
                 container_port=8000,
                 environment={
                     "POSTGRES_DB": "requests_db",
@@ -88,6 +88,7 @@ class InfrastructureStack(Stack):
                     "POSTGRES_PASSWORD": ecs.Secret.from_secrets_manager(db_secret, "password")
                 }
             ),
+            task_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
             public_load_balancer=True
         )
 
@@ -121,6 +122,7 @@ class InfrastructureStack(Stack):
             self, "ConsumerService",
             cluster=cluster,
             task_definition=consumer_task,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
             desired_count=1
         )
 

@@ -15,7 +15,7 @@ POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "external_id": "EXT-TEST-001",
+  "external_id": "123e4567-e89b-12d3-a456-426614174001",
   "type": "technical_support",
   "requester_name": "Test User",
   "email": "test.user@example.com",
@@ -30,7 +30,7 @@ POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "external_id": "EXT-TEST-002",
+  "external_id": "123e4567-e89b-12d3-a456-426614174002",
   "type": "platform_access",
   "requester_name": "Test User Two",
   "email": "user2@example.com",
@@ -60,11 +60,11 @@ POST http://localhost:8000/api/v1/requests
 Content-Type: application/json
 
 {
-  "external_id": "EXT-TEST-001",
+  "external_id": "123e4567-e89b-12d3-a456-426614174001",
   "type": "technical_support",
   "requester_name": "Test User",
   "email": "test.user@example.com",
-  "description": "Intento de duplicar el identificador EXT-TEST-001",
+  "description": "Intento de duplicar el identificador 123e4567-e89b-12d3-a456-426614174001",
   "priority": "low"
 }
 

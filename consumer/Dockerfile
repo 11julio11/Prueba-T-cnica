@@ -5,9 +5,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY consumer/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY consumer.py .
+COPY consumer/consumer.py .
 
 CMD ["python", "consumer.py"]
