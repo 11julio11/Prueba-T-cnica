@@ -32,6 +32,8 @@ architecture-beta
     service sqs(server)[SQS Message Queue] in aws
     service consumer(server)[Consumer ECS Fargate] in private
     service secrets(cloud)[AWS Secrets Manager] in aws
+    service cloudwatch(cloud)[AWS CloudWatch] in aws
+    service xray(cloud)[AWS X-Ray / OTEL] in aws
     
     alb:R --> L:backend
     backend:R --> L:rds
@@ -39,6 +41,10 @@ architecture-beta
     sqs:L --> R:consumer
     backend:B --> T:secrets
     consumer:B --> T:secrets
+    backend:L --> R:cloudwatch
+    consumer:L --> R:cloudwatch
+    backend:T --> B:xray
+    consumer:T --> B:xray
 ```
 
 ## 3. Gestión de Tráfico y Balanceo de Carga
