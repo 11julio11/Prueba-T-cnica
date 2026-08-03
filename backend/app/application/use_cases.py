@@ -31,7 +31,7 @@ class RegisterInstitutionalRequest:
             description=description,
             priority=priority,
         )
-        self._repo.save(new_request)
+        self._repo.create(new_request)
         return new_request
 
 
@@ -45,7 +45,7 @@ class UpdateInstitutionalRequestStatus:
             raise RequestNotFoundError(external_id)
 
         request.update_status(new_status)
-        self._repo.save(request)
+        self._repo.update(request)
         return request
 
 

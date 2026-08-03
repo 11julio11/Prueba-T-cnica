@@ -6,8 +6,13 @@ from backend.app.domain.value_objects import Priority, RequestType, Status
 
 class RequestRepository(ABC):
     @abstractmethod
-    def save(self, request: InstitutionalRequest) -> InstitutionalRequest:
-        """Persists a new or updated request and returns it."""
+    def create(self, request: InstitutionalRequest) -> InstitutionalRequest:
+        """Persists a new request and returns it."""
+        ...
+
+    @abstractmethod
+    def update(self, request: InstitutionalRequest) -> InstitutionalRequest:
+        """Updates an existing request and returns it."""
         ...
 
     @abstractmethod

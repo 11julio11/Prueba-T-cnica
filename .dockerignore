@@ -5,8 +5,8 @@
 .github
 
 # Pytest / Tests
-tests/
-backend/tests/
+
+
 .pytest_cache/
 htmlcov/
 .coverage

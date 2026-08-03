@@ -26,9 +26,12 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY backend/ .
 
 # Entry script that runs migrations and then starts the server
-COPY entrypoint.sh /app/backend/entrypoint.sh
+COPY backend/entrypoint.sh /app/backend/entrypoint.sh
 # Strip Windows CRLF line endings so the shebang works on Linux
 RUN sed -i 's/\r$//' /app/backend/entrypoint.sh && chmod +x /app/backend/entrypoint.sh
+
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
 
 EXPOSE 8000
 

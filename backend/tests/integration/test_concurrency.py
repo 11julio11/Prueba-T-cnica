@@ -45,7 +45,7 @@ def test_repository_handles_concurrent_inserts(valid_data):
 
     # 3. Assert that the repository catches it and raises the domain exception
     with pytest.raises(DuplicateExternalIdError) as exc_info:
-        repo.save(request)
+        repo.create(request)
 
     assert str(exc_info.value.external_id) == "11111111-1111-4111-a111-111111111111"
     session_mock.rollback.assert_called_once()

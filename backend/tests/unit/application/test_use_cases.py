@@ -26,14 +26,14 @@ def test_register_institutional_request_success(register_use_case, fake_repo, va
 
 def test_register_institutional_request_duplicate(register_use_case, fake_repo, valid_data, existing_request):
     # We manually save to the fake repo to simulate the duplicate.
-    fake_repo.save(existing_request)
+    fake_repo.create(existing_request)
 
     with pytest.raises(DuplicateExternalIdError):
         register_use_case.execute(**valid_data)
 
 def test_update_institutional_request_status_success(update_use_case, fake_repo, existing_request):
     # Setup initial state
-    fake_repo.save(existing_request)
+    fake_repo.create(existing_request)
 
     assert existing_request.status is Status.RECEIVED
 
@@ -51,14 +51,14 @@ def test_update_institutional_request_status_not_found(update_use_case, fake_rep
 
 def test_update_institutional_request_status_invalid_transition(update_use_case, fake_repo, existing_request):
     existing_request.status = Status.COMPLETED
-    fake_repo.save(existing_request)
+    fake_repo.create(existing_request)
 
     with pytest.raises(InvalidStatusTransitionError):
         update_use_case.execute(existing_request.external_id, Status.RECEIVED)
 
 
 def test_get_institutional_request_success(get_use_case, fake_repo, existing_request):
-    fake_repo.save(existing_request)
+    fake_repo.create(existing_request)
 
     result = get_use_case.execute(existing_request.external_id)
 
@@ -72,7 +72,7 @@ def test_get_institutional_request_not_found(get_use_case, fake_repo):
 
 
 def test_list_institutional_requests(list_use_case, fake_repo, existing_request):
-    fake_repo.save(existing_request)
+    fake_repo.create(existing_request)
 
     results = list_use_case.execute()
 
@@ -81,7 +81,7 @@ def test_list_institutional_requests(list_use_case, fake_repo, existing_request)
 
 
 def test_list_institutional_requests_with_filters(list_use_case, fake_repo, existing_request):
-    fake_repo.save(existing_request)
+    fake_repo.create(existing_request)
 
     # Save another request with different properties
     from backend.app.domain.entities import InstitutionalRequest
@@ -96,7 +96,7 @@ def test_list_institutional_requests_with_filters(list_use_case, fake_repo, exis
         description="Other desc",
         priority=Priority.LOW
     )
-    fake_repo.save(other_request)
+    fake_repo.create(other_request)
 
     # Filter by type that matches existing_request (TECHNICAL_SUPPORT)
     results = list_use_case.execute(type=RequestType.TECHNICAL_SUPPORT)

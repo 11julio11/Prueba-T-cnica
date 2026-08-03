@@ -15,21 +15,26 @@ class PostgresRequestRepository(RequestRepository):
     def __init__(self, db: Session) -> None:
         self._db = db
 
-    def save(self, request: InstitutionalRequest) -> InstitutionalRequest:
+    def create(self, request: InstitutionalRequest) -> InstitutionalRequest:
         try:
-            model = self._db.get(RequestModel, request.external_id)
-            if model:
-                model.status = request.status
-                model.updated_at = request.updated_at
-            else:
-                model = to_model(request)
-                self._db.add(model)
+            model = to_model(request)
+            self._db.add(model)
             self._db.commit()
             self._db.refresh(model)
             return to_entity(model)
         except IntegrityError:
             self._db.rollback()
             raise DuplicateExternalIdError(request.external_id)
+
+    def update(self, request: InstitutionalRequest) -> InstitutionalRequest:
+        model = self._db.get(RequestModel, request.external_id)
+        if model:
+            model.status = request.status
+            model.updated_at = request.updated_at
+            self._db.commit()
+            self._db.refresh(model)
+            return to_entity(model)
+        return request
 
     def update_status(self, external_id: str, new_status: str) -> InstitutionalRequest | None:
         if isinstance(external_id, str):

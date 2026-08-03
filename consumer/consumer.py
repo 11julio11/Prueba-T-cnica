@@ -11,6 +11,7 @@ import os
 import random
 import time
 import sys
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -78,7 +79,7 @@ if not DATABASE_URL:
 
 SOLICITUDES: list[dict] = [
     {
-        "external_id": "123e4567-e89b-12d3-a456-426614174001",
+        "external_id": "11111111-1111-4111-a111-111111111111",
         "type": "technical_support",
         "requester_name": "Ana Martínez",
         "email": "ana.martinez@institucion.edu.co",
@@ -86,7 +87,7 @@ SOLICITUDES: list[dict] = [
         "priority": "high",
     },
     {
-        "external_id": "123e4567-e89b-12d3-a456-426614174002",
+        "external_id": "22222222-2222-4222-a222-222222222222",
         "type": "platform_access",
         "requester_name": "Carlos Pérez",
         "email": "carlos.perez@institucion.edu.co",
@@ -94,7 +95,7 @@ SOLICITUDES: list[dict] = [
         "priority": "medium",
     },
     {
-        "external_id": "123e4567-e89b-12d3-a456-426614174003",
+        "external_id": "33333333-3333-4333-a333-333333333333",
         "type": "academic",
         "requester_name": "Laura Gómez",
         "email": "laura.gomez@institucion.edu.co",
@@ -102,7 +103,7 @@ SOLICITUDES: list[dict] = [
         "priority": "high",
     },
     {
-        "external_id": "123e4567-e89b-12d3-a456-426614174004",
+        "external_id": "44444444-4444-4444-a444-444444444444",
         "type": "administrative",
         "requester_name": "Juan Rodríguez",
         "email": "juan.rodriguez@institucion.edu.co",
@@ -110,7 +111,7 @@ SOLICITUDES: list[dict] = [
         "priority": "low",
     },
     {
-        "external_id": "123e4567-e89b-12d3-a456-426614174005",
+        "external_id": "55555555-5555-4555-a555-555555555555",
         "type": "technical_support",
         "requester_name": "María López",
         "email": "maria.lopez@institucion.edu.co",
@@ -119,7 +120,7 @@ SOLICITUDES: list[dict] = [
     },
     # Intentionally invalid request to test 4xx error handling
     {
-        "external_id": "123e4567-e89b-12d3-a456-426614174006",
+        "external_id": "66666666-6666-4666-a666-666666666666",
         "type": "tipo_invalido",          # non-existent catalog value
         "requester_name": "Test Error",
         "email": "no-es-email",          # invalid email
@@ -133,11 +134,13 @@ SOLICITUDES: list[dict] = [
 
 import httpx
 
-def http_post(url: str, payload: dict, timeout: float) -> tuple[int, dict]:
+def http_post(url: str, payload: dict, timeout: float, correlation_id: str = "") -> tuple[int, dict]:
     start = time.perf_counter()
+    req_id = correlation_id or str(uuid.uuid4())
+    headers = {"X-Request-ID": req_id}
     try:
         with httpx.Client(timeout=timeout) as client:
-            resp = client.post(url, json=payload)
+            resp = client.post(url, json=payload, headers=headers)
             body = resp.json()
             duration = int((time.perf_counter() - start) * 1000)
             return resp.status_code, body
@@ -148,11 +151,13 @@ def http_post(url: str, payload: dict, timeout: float) -> tuple[int, dict]:
         # Re-raise as RequestError for the caller
         raise e
 
-def http_get(url: str, timeout: float) -> tuple[int, dict]:
+def http_get(url: str, timeout: float, correlation_id: str = "") -> tuple[int, dict]:
     start = time.perf_counter()
+    req_id = correlation_id or str(uuid.uuid4())
+    headers = {"X-Request-ID": req_id}
     try:
         with httpx.Client(timeout=timeout) as client:
-            resp = client.get(url)
+            resp = client.get(url, headers=headers)
             body = resp.json()
             return resp.status_code, body
     except httpx.HTTPStatusError as e:
@@ -189,7 +194,7 @@ def post_con_retry(
         status_code: Optional[int] = None
 
         try:
-            status_code, body = http_post(url, payload, TIMEOUT_S)
+            status_code, body = http_post(url, payload, TIMEOUT_S, identificador)
             duration = int((time.perf_counter() - start) * 1000)
 
             if status_code in (200, 201):
@@ -298,7 +303,7 @@ def esperar_backend() -> None:
 def consultar_status(request_id: str) -> Optional[dict]:
     url = f"{API_BASE_URL}/requests/{request_id}"
     try:
-        status_code, body = http_get(url, timeout=TIMEOUT_S)
+        status_code, body = http_get(url, timeout=TIMEOUT_S, correlation_id=request_id)
         if status_code == 200:
             log.info(
                 "Status consultado",

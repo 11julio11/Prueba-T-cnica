@@ -1,5 +1,6 @@
 
 from fastapi import APIRouter, Depends, Query, status
+from pydantic import UUID4
 
 from backend.app.api.dependencies import get_request_repository
 from backend.app.api.v1.schemas.request_schema import (
@@ -100,7 +101,7 @@ def list_requests(
     summary="Retrieve a specific request by external_id",
 )
 def get_request(
-    external_id: str,
+    external_id: UUID4,
     repo: RequestRepository = Depends(get_request_repository),
 ) -> ResponseSchema:
     with TimingContext() as t:
@@ -126,7 +127,7 @@ def get_request(
     summary="Update the status of a request",
 )
 def update_status(
-    external_id: str,
+    external_id: UUID4,
     body: UpdateStatusSchema,
     repo: RequestRepository = Depends(get_request_repository),
 ) -> ResponseSchema:

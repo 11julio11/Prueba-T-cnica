@@ -10,4 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY consumer/consumer.py .
 
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
+
 CMD ["python", "consumer.py"]

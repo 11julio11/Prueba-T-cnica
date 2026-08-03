@@ -20,11 +20,14 @@ class FakeRequestRepository(RequestRepository):
     def __init__(self):
         self._db: dict[str, InstitutionalRequest] = {}
 
-    def save(self, request: InstitutionalRequest) -> InstitutionalRequest:
-        existing = self._db.get(str(request.external_id))
-        if existing and id(existing) != id(request):
+    def create(self, request: InstitutionalRequest) -> InstitutionalRequest:
+        if str(request.external_id) in self._db:
             from backend.app.domain.exceptions import DuplicateExternalIdError
             raise DuplicateExternalIdError(request.external_id)
+        self._db[str(request.external_id)] = request
+        return request
+
+    def update(self, request: InstitutionalRequest) -> InstitutionalRequest:
         self._db[str(request.external_id)] = request
         return request
 

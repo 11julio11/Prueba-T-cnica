@@ -4,8 +4,7 @@ from aws_cdk import (
     aws_ecs as ecs,
     aws_ecs_patterns as ecs_patterns,
     aws_rds as rds,
-    aws_sqs as sqs,
-    aws_secretsmanager as secretsmanager,
+        aws_secretsmanager as secretsmanager,
     SecretValue,
     CfnOutput
 )
@@ -86,6 +85,10 @@ class InfrastructureStack(Stack):
             public_load_balancer=True
         )
 
+        backend_service.target_group.configure_health_check(
+            path="/health"
+        )
+
         # Grant permissions
         db_secret.grant_read(backend_service.task_definition.task_role)
 
@@ -99,13 +102,7 @@ class InfrastructureStack(Stack):
         consumer_task.add_container("ConsumerContainer",
             image=ecs.ContainerImage.from_asset("../../", file="consumer/Dockerfile"),
             environment={
-                "POSTGRES_DB": "requests_db",
-                "POSTGRES_HOST": db_instance.db_instance_endpoint_address,
                 "API_BASE_URL": "http://" + backend_service.load_balancer.load_balancer_dns_name + "/api/v1"
-            },
-            secrets={
-                "POSTGRES_USER": ecs.Secret.from_secrets_manager(db_secret, "username"),
-                "POSTGRES_PASSWORD": ecs.Secret.from_secrets_manager(db_secret, "password")
             },
             logging=ecs.LogDrivers.aws_logs(stream_prefix="ConsumerLog")
         )
@@ -117,9 +114,6 @@ class InfrastructureStack(Stack):
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
             desired_count=1
         )
-
-        # Grant permissions to consumer
-        db_secret.grant_read(consumer_task.task_role)
 
         # Outputs
         CfnOutput(self, "ApiUrl", value=backend_service.load_balancer.load_balancer_dns_name)
