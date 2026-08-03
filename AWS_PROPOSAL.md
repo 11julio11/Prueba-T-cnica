@@ -20,29 +20,46 @@ Antes de detallar el despliegue en la nube, es fundamental entender el "por qué
 El siguiente diagrama detalla cómo interactúan los componentes en la nube de AWS:
 
 ```mermaid
-architecture-beta
-    group aws(cloud)[AWS Cloud]
-    group vpc(cloud)[VPC] in aws
-    group public(cloud)[Public Subnet] in vpc
-    group private(cloud)[Private Subnet] in vpc
+flowchart TD
+    subgraph AWS [AWS Cloud]
+        Secrets[(AWS Secrets Manager)]
+        CW[AWS CloudWatch]
+        XRay[AWS X-Ray / OTEL]
 
-    service alb(server)[Application Load Balancer] in public
-    service backend(server)[Backend ECS Fargate] in private
-    service rds(database)[RDS PostgreSQL] in private
-    service consumer(server)[Consumer ECS Fargate] in private
-    service secrets(cloud)[AWS Secrets Manager] in aws
-    service cloudwatch(cloud)[CloudWatch] in aws
-    service xray(cloud)[XRay OTEL] in aws
+        subgraph VPC [VPC]
+            subgraph Public [Public Subnet]
+                ALB{{Application Load Balancer}}
+            end
+
+            subgraph Private [Private Subnet]
+                Consumer[Consumer ECS Fargate]
+                Backend[Backend ECS Fargate]
+                RDS[(RDS PostgreSQL)]
+            end
+        end
+    end
+
+    Consumer -->|HTTP Requests| ALB
+    ALB -->|Rutas /api/v1| Backend
+    Backend -->|PostgreSQL Protocol| RDS
+
+    %% Secrets
+    Backend -.->|Lee Credenciales| Secrets
+    Consumer -.->|Lee Credenciales| Secrets
+
+    %% Telemetría
+    Backend -.->|Logs| CW
+    Consumer -.->|Logs| CW
+    Backend -.->|Trazas| XRay
+    Consumer -.->|Trazas| XRay
+
+    classDef aws fill:#FF9900,color:#232F3E,stroke:#232F3E;
+    classDef vpc fill:#00A4A6,color:white,stroke:#232F3E;
+    classDef subnet fill:#E9F3F7,color:#232F3E,stroke:#00A4A6,stroke-dasharray: 5 5;
     
-    alb:R --> L:backend
-    backend:R --> L:rds
-    consumer:R --> L:alb
-    backend:B --> T:secrets
-    consumer:B --> T:secrets
-    backend:L --> R:cloudwatch
-    consumer:L --> R:cloudwatch
-    backend:T --> B:xray
-    consumer:T --> B:xray
+    class AWS aws;
+    class VPC vpc;
+    class Public,Private subnet;
 ```
 
 ## 3. Gestión de Tráfico y Balanceo de Carga
