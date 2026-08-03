@@ -60,3 +60,6 @@ infrastructure/aws/cdk.out/
 
 # Other
 logs/
+
+# Tests
+backend/tests/
