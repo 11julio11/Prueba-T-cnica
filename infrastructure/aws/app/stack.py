@@ -58,7 +58,9 @@ class InfrastructureStack(Stack):
             credentials=rds.Credentials.from_secret(db_secret),
             database_name="solicitudes_db",
             storage_encrypted=True,
-            removal_policy=RemovalPolicy.DESTROY
+            removal_policy=RemovalPolicy.RETAIN,
+            multi_az=True,
+            deletion_protection=True
         )
 
         # 4. ECS Cluster

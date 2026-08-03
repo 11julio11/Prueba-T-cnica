@@ -27,6 +27,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+from backend.app.api.middleware import RequestContextMiddleware
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://admin.institucion.edu.co", "http://localhost:3000"],
@@ -34,6 +36,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestContextMiddleware)
 
 register_exception_handlers(app)
 
