@@ -78,13 +78,13 @@ if not DATABASE_URL:
 
 # ── Example requests ────────────────────────────────────────────────────
 
-SOLICITUDES: list[dict] = [
+APPLICATIONS: list[dict] = [
     {
         "external_id": "11111111-1111-4111-a111-111111111111",
         "type": "technical_support",
         "requester_name": "Ana Martínez",
         "email": "ana.martinez@institucion.edu.co",
-        "description": "No puedo acceder al sistema de notas desde ayer en la mañana",
+        "description": "I cannot access the grading system since yesterday morning",
         "priority": "high",
     },
     {
@@ -92,7 +92,7 @@ SOLICITUDES: list[dict] = [
         "type": "platform_access",
         "requester_name": "Carlos Pérez",
         "email": "carlos.perez@institucion.edu.co",
-        "description": "Necesito acceso al módulo de reportes financieros del tercer piso",
+        "description": "I need access to the financial reports module on the third floor",
         "priority": "medium",
     },
     {
@@ -100,7 +100,7 @@ SOLICITUDES: list[dict] = [
         "type": "academic",
         "requester_name": "Laura Gómez",
         "email": "laura.gomez@institucion.edu.co",
-        "description": "ServiceRequest de corrección de notas del segundo semestre según acta adjunta",
+        "description": "Grade correction request for the second semester according to the attached act",
         "priority": "high",
     },
     {
@@ -108,7 +108,7 @@ SOLICITUDES: list[dict] = [
         "type": "administrative",
         "requester_name": "Juan Rodríguez",
         "email": "juan.rodriguez@institucion.edu.co",
-        "description": "ServiceRequest de paz y salvo para trámite de grado, requiere respuesta urgente",
+        "description": "Clearance request for graduation process, urgent response required",
         "priority": "low",
     },
     {
@@ -116,17 +116,17 @@ SOLICITUDES: list[dict] = [
         "type": "technical_support",
         "requester_name": "María López",
         "email": "maria.lopez@institucion.edu.co",
-        "description": "El computador del laboratorio 3 no enciende desde el martes en la tarde",
+        "description": "The computer in lab 3 won't turn on since Tuesday afternoon",
         "priority": "medium",
     },
     # Intentionally invalid request to test 4xx error handling
     {
         "external_id": "66666666-6666-4666-a666-666666666666",
-        "type": "tipo_invalido",          # non-existent catalog value
+        "type": "invalid_type",           # non-existent catalog value
         "requester_name": "Test Error",
-        "email": "no-es-email",          # invalid email
+        "email": "not-an-email",          # invalid email
         "description": "Error test",
-        "priority": "urgente",            # non-existent priority
+        "priority": "urgent",             # non-existent priority
     },
 ]
 
@@ -176,10 +176,10 @@ def _backoff_delay(attempt: int) -> float:
     return min(delay, MAX_DELAY_S)
 
 
-def post_con_retry(
+def post_with_retry(
     url: str,
     payload: dict,
-    identificador: str,
+    identifier: str,
 ) -> Optional[dict]:
     last_status: Optional[int] = None
 
@@ -188,14 +188,14 @@ def post_con_retry(
         status_code: Optional[int] = None
 
         try:
-            status_code, body = http_post(url, payload, TIMEOUT_S, identificador)
+            status_code, body = http_post(url, payload, TIMEOUT_S, identifier)
             duration = int((time.perf_counter() - start) * 1000)
 
             if status_code in (200, 201):
                 log.info(
-                    "ServiceRequest creada exitosamente",
+                    "ServiceRequest successfully created",
                     extra={
-                        "external_id": identificador,
+                        "external_id": identifier,
                         "request_id": body.get("external_id"),
                         "attempt": attempt,
                         "status_code": status_code,
@@ -209,27 +209,27 @@ def post_con_retry(
             # 4xx Error → definitive, do not retry
             if 400 <= status_code < 500:
                 log.warning(
-                    "Error definitivo (4xx), no se reintentará",
+                    "Definitive error (4xx), will not retry",
                     extra={
-                        "external_id": identificador,
+                        "external_id": identifier,
                         "attempt": attempt,
                         "status_code": status_code,
-                        "error": body.get("detail", "Error de cliente"),
+                        "error": body.get("detail", "Client error"),
                         "method": "POST",
                         "endpoint": url,
                     },
                 )
                 return None
 
-            # Error 5xx → temporal, reintentar
+            # 5xx Error → temporary, retry
             log.warning(
                 "Temporary error (5xx), retrying",
                 extra={
-                    "external_id": identificador,
+                    "external_id": identifier,
                     "attempt": attempt,
                     "max_attempts": MAX_ATTEMPTS,
                     "status_code": status_code,
-                    "error": body.get("detail", "Error de servidor"),
+                    "error": body.get("detail", "Server error"),
                 },
             )
 
@@ -238,7 +238,7 @@ def post_con_retry(
             log.warning(
                 "Connection error, retrying",
                 extra={
-                    "external_id": identificador,
+                    "external_id": identifier,
                     "attempt": attempt,
                     "max_attempts": MAX_ATTEMPTS,
                     "error": str(exc),
@@ -250,18 +250,18 @@ def post_con_retry(
         if attempt < MAX_ATTEMPTS:
             delay = _backoff_delay(attempt)
             log.info(
-                f"Esperando {delay:.1f}s antes del siguiente intento",
+                f"Waiting {delay:.1f}s before next attempt",
                 extra={
-                    "external_id": identificador,
+                    "external_id": identifier,
                     "attempt": attempt,
                 },
             )
             time.sleep(delay)
 
     log.error(
-        "Se agotaron los reintentos",
+        "Max retries exceeded",
         extra={
-            "external_id": identificador,
+            "external_id": identifier,
             "max_attempts": MAX_ATTEMPTS,
             "last_status_code": last_status,
         },
@@ -271,36 +271,36 @@ def post_con_retry(
 
 # ── Main flow ───────────────────────────────────────────────────────────
 
-def esperar_backend() -> None:
+def wait_for_backend() -> None:
     """Active wait until backend responds on /health."""
     health_url = f"{API_BASE_URL.replace('/api/v1', '')}/health"
-    log.info("Esperando que el backend esté disponible", extra={"endpoint": health_url})
+    log.info("Waiting for backend to be ready", extra={"endpoint": health_url})
 
     for attempt in range(1, 31):
         try:
             status_code, _ = http_get(health_url, timeout=3.0)
             if status_code == 200:
-                log.info("Backend disponible", extra={"attempt": attempt})
+                log.info("Backend is ready", extra={"attempt": attempt})
                 return
         except Exception:
             pass
 
         log.info(
-            "Backend aún no disponible, reintentando...",
+            "Backend not ready yet, retrying...",
             extra={"attempt": attempt},
         )
         time.sleep(3)
 
-    raise RuntimeError("El backend no respondió después de 90 segundos")
+    raise RuntimeError("Backend did not respond after 90 seconds")
 
 
-def consultar_status(request_id: str) -> Optional[dict]:
+def fetch_status(request_id: str) -> Optional[dict]:
     url = f"{API_BASE_URL}/requests/{request_id}"
     try:
         status_code, body = http_get(url, timeout=TIMEOUT_S, correlation_id=request_id)
         if status_code == 200:
             log.info(
-                "Status consultado",
+                "Status fetched",
                 extra={
                     "request_id": request_id,
                     "status_code": status_code,
@@ -310,58 +310,58 @@ def consultar_status(request_id: str) -> Optional[dict]:
             )
             return body
         log.warning(
-            "No se pudo consultar el status",
+            "Could not fetch status",
             extra={"request_id": request_id, "status_code": status_code},
         )
     except Exception as exc:
         log.error(
-            "Error al consultar status",
+            "Error fetching status",
             extra={"request_id": request_id, "error": str(exc)},
         )
     return None
 
 
 def main() -> None:
-    log.info("Iniciando consumidor de requests")
+    log.info("Starting requests consumer")
     time.sleep(STARTUP_WAIT_S)
-    esperar_backend()
+    wait_for_backend()
 
-    url_crear = f"{API_BASE_URL}/requests"
-    resultados: list[dict] = []
+    create_url = f"{API_BASE_URL}/requests"
+    results: list[dict] = []
 
     # ── Phase 1: create all requests ──────────────────────────────────
-    log.info(f"Iniciando creación de {len(SOLICITUDES)} requests")
+    log.info(f"Starting creation of {len(APPLICATIONS)} requests")
 
-    for request in SOLICITUDES:
-        ident = request["external_id"]
-        log.info("Enviando request", extra={"external_id": ident})
-        resultado = post_con_retry(url_crear, request, ident)
-        if resultado:
-            resultados.append(resultado)
+    for request in APPLICATIONS:
+        identifier = request["external_id"]
+        log.info("Sending request", extra={"external_id": identifier})
+        result = post_with_retry(create_url, request, identifier)
+        if result:
+            results.append(result)
 
     log.info(
-        "Fase de creación completed",
-        extra={"creadas": len(resultados), "fallidas": len(SOLICITUDES) - len(resultados)},
+        "Creation phase completed",
+        extra={"created": len(results), "failed": len(APPLICATIONS) - len(results)},
     )
 
-    if not resultados:
-        log.error("Ninguna solicitud fue creada exitosamente.")
+    if not results:
+        log.error("No request was successfully created.")
         sys.exit(1)
 
     # ── Phase 2: check status of created ones ───────────────────────────────
-    log.info("Consultando status de requests creadas")
+    log.info("Checking the status of created requests")
     time.sleep(2)
 
-    for item in resultados:
-        status_actual = consultar_status(item["external_id"])
-        if status_actual:
+    for item in results:
+        current_status = fetch_status(item["external_id"])
+        if current_status:
             log.info(
-                "Resumen de request",
+                "Summary request",
                 extra={
                     "request_id": item["external_id"],
                     "external_id": item["external_id"],
-                    "status": status_actual["status"],
-                    "priority": status_actual["priority"],
+                    "status": current_status["status"],
+                    "priority": current_status["priority"],
                 },
             )
 

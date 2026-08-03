@@ -127,7 +127,8 @@ graph LR
 |---|---|
 | **Alembic (Migraciones)** | Las migraciones están versionadas y se ejecutan automáticamente al arrancar el contenedor (`entrypoint.sh`). |
 | **Logs Estructurados (JSON)** | Formateador JSON a la medida emite `timestamp`, `service`, `method`, `endpoint`, `status_code`, `duration_ms`. 100% compatible con CloudWatch o Datadog. |
-| **Integridad Concurrente** | El control de duplicidad se gestiona capturando la colisión nativa (`IntegrityError`) de la base de datos, protegiendo al sistema de "Condiciones de Carrera" (Race Conditions). |
+| **Integridad Concurrente** | El control de duplicidad se gestiona capturando la colisión nativa (`IntegrityError`) de la base de datos, protegiendo al sistema de "Condiciones de Carrera" (Race Conditions) y retornando 409 Conflict. |
+| **Observabilidad** | Trazas distribuidas mediante la propagación de la cabecera `X-Request-ID` entre el Consumidor y el Backend, permitiendo correlacionar logs End-to-End. |
 | **pydantic-settings** | Configuración inyectada 100% desde variables de entorno. Cero secretos en código. |
 
 ---

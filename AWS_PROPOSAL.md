@@ -62,7 +62,6 @@ flowchart TD
     ECR -..->|Pull imagen| Consumer
 
     Backend -..->|Lee DB password| Secrets
-    Consumer -..->|Lee credenciales| Secrets
 
     Backend -..->|Structured JSON Logs| CW
     Consumer -..->|Logs| CW
@@ -121,8 +120,7 @@ Para garantizar el cifrado en tránsito, el **Application Load Balancer (ALB)** 
 ### 5.5. IAM (Identity and Access Management)
 El principio de mínimo privilegio regirá la comunicación:
 - **Task Execution Role (ECS)**: Permiso para que ECS extraiga imágenes de ECR y escriba logs en CloudWatch.
-- **Task Role (Backend)**: Permisos de lectura (`secretsmanager:GetSecretValue`) únicamente al secreto específico de la BD.
-- **Task Role (Consumer)**: Idéntico al backend, solo lectura de credenciales.
+- **Task Role (Consumer)**: Principio de Menor Privilegio estricto. **No tiene acceso** a lectura de credenciales ni a la Base de Datos. Solo posee permisos para ejecutar llamadas HTTP y emitir logs en CloudWatch, previniendo exposición cruzada de secretos.
 
 ## 6. Estrategia de Reversión y Alertas (Resiliencia Adicional)
 
