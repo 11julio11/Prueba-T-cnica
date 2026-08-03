@@ -122,13 +122,19 @@ class InfrastructureStack(Stack):
             memory_limit_mib=512
         )
         
-        # WARNING: Using HTTP listener for the ALB as requested by the architecture diagram.
-        # In a production environment, this MUST be HTTPS (port 443) with a valid SSL/TLS certificate.
+        import aws_cdk.aws_elasticloadbalancingv2 as elbv2
         
+        backend_service.listener.add_targets(
+            "ApiTargets",
+            priority=10,
+            conditions=[elbv2.ListenerCondition.path_patterns(["/api/*", "/health*"])],
+            targets=[backend_service.target_group]
+        )
+
         consumer_task.add_container("ConsumerContainer",
             image=ecs.ContainerImage.from_asset("../../", file="consumer/Dockerfile"),
             environment={
-                "API_BASE_URL": "http://" + backend_service.load_balancer.load_balancer_dns_name + "/api/v1"
+                "API_BASE_URL": "https://" + backend_service.load_balancer.load_balancer_dns_name + "/api/v1"
             },
             logging=ecs.LogDrivers.aws_logs(stream_prefix="ConsumerLog")
         )

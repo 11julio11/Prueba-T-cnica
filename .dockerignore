@@ -56,10 +56,67 @@ pip-delete-this-directory.txt
 .DS_Store
 
 # CDK
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Pytest / Tests
+
+
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environment variables
+.env
+.env.example
+.env.*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# CDK
 infrastructure/aws/cdk.out/
 
 # Other
 logs/
 
 # Tests
-backend/tests/

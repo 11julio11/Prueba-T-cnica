@@ -29,6 +29,8 @@ class JSONFormatter(logging.Formatter):
         for field in (
             "request_id",
             "external_id",
+            "status",
+            "priority",
             "method",
             "endpoint",
             "status_code",

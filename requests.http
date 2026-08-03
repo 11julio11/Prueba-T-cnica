@@ -118,8 +118,8 @@ Accept: application/json
 
 ###
 
-### Get specific request – replace <external_id> with a real UUID from POST response
-GET http://localhost:8000/api/v1/requests/<external_id>
+### Get specific request – replace 64b4b2b9-9886-4818-92d7-d064abe96956 with a real UUID from POST response
+GET http://localhost:8000/api/v1/requests/64b4b2b9-9886-4818-92d7-d064abe96956
 Accept: application/json
 
 ###
@@ -130,8 +130,8 @@ Accept: application/json
 
 ###
 
-### Update estado → en_proceso (replace <external_id> with a real UUID)
-PATCH http://localhost:8000/api/v1/requests/<external_id>/status
+### Update estado → en_proceso (replace 64b4b2b9-9886-4818-92d7-d064abe96956 with a real UUID)
+PATCH http://localhost:8000/api/v1/requests/64b4b2b9-9886-4818-92d7-d064abe96956/status
 Content-Type: application/json
 
 {
