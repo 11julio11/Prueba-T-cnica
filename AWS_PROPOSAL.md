@@ -32,8 +32,8 @@ architecture-beta
     service sqs(server)[SQS Message Queue] in aws
     service consumer(server)[Consumer ECS Fargate] in private
     service secrets(cloud)[AWS Secrets Manager] in aws
-    service cloudwatch(cloud)[AWS CloudWatch] in aws
-    service xray(cloud)[AWS X-Ray / OTEL] in aws
+    service cloudwatch(cloud)[CloudWatch] in aws
+    service xray(cloud)[XRay OTEL] in aws
     
     alb:R --> L:backend
     backend:R --> L:rds
