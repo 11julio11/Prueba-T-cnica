@@ -13,7 +13,8 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         req_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
         request_id_ctx_var.set(req_id)
-        
+
+
         response = await call_next(request)
         response.headers["X-Request-ID"] = req_id
         return response

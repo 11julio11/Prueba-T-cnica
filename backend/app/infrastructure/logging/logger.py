@@ -14,7 +14,8 @@ class JSONFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         from backend.app.api.middleware import request_id_ctx_var
         req_id = request_id_ctx_var.get()
-        
+
+
         log_entry: dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": record.levelname,

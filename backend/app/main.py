@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.api.exception_handlers import register_exception_handlers
+from backend.app.api.middleware import RequestContextMiddleware
 from backend.app.api.v1.routers import health, requests
 from backend.app.config import settings
 from backend.app.infrastructure.logging.logger import get_logger, setup_logging
@@ -27,7 +28,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-from backend.app.api.middleware import RequestContextMiddleware
 
 app.add_middleware(
     CORSMiddleware,
