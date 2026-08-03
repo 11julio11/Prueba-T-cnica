@@ -10,7 +10,7 @@ Antes de detallar el despliegue en la nube, es fundamental entender el "por qué
   Elegí Arquitectura Hexagonal porque el requerimiento exige una solución mantenible y preparada para integrarse con "otros sistemas" a futuro. Esta arquitectura aísla la lógica core del negocio (Dominio y Casos de Uso) de los detalles técnicos y herramientas (Base de datos PostgreSQL, Framework web FastAPI, Colas de mensajes). Gracias a esto, si a futuro decidí migrar a otro motor de base de datos o cambiar de framework, el núcleo de la aplicación permanecerá intacto, ya que la comunicación ocurre a través de contratos (interfaces/puertos).
 
 - **Estrategia de Pruebas Unitarias (Enfoque en Casos de Uso):**
-  Los tests unitarios no prueban las entidades o modelos de forma aislada y anémica. Siguiendo las prácticas modernas de desarrollo y diseño de software, los tests atacan directamente los **Casos de Uso**. El caso de uso es la capa que orquesta las entidades, aplica las reglas del negocio y coordina con los repositorios. Testear a este nivel asegura que estamos probando el *comportamiento y las reglas de negocio reales* que aportan valor al usuario, y no simplemente testeando el estado interno de un objeto de Python. Además, nos permite inyectar dependencias simuladas (Mocks) para probar escenarios complejos como la concurrencia.
+  Los tests unitarios no prueban las entidades o modelos de forma aislada y anémica. Siguiendo las prácticas modernas de desarrollo y diseño de software, los tests atacan directamente los **Casos de Uso**. El caso de uso es la capa que orquesta las entidades, aplica las reglas del negocio y coordina con los repositorios. Testear a este nivel asegura que estoy probando el *comportamiento y las reglas de negocio reales* que aportan valor al usuario, y no simplemente testeando el estado interno de un objeto de Python. Además, me permite inyectar dependencias simuladas (Mocks) para probar escenarios complejos como la concurrencia.
 
 ### Monitoreo (Opcional - pero recomendado)
 - Habilitar métricas detalladas en el ALB, RDS, ECS y SQS mediante **CloudWatch**.
@@ -96,7 +96,7 @@ flowchart TD
 
 ## 4. Reglas de Acceso (Security Groups)
 
-Aplicamos el principio de menor privilegio en la red:
+Apliqué el principio de menor privilegio en la red:
 
 - **ALB Security Group:** 
   - **Inbound:** Permite tráfico HTTP/HTTPS desde *Cualquier lugar (0.0.0.0/0)*.
@@ -125,7 +125,7 @@ El principio de mínimo privilegio regirá la comunicación:
 ## 6. Estrategia de Reversión y Alertas (Resiliencia Adicional)
 
 ### 6.1. Estrategia de Reversión (Rollback)
-Dado que usamos ECS Fargate, el despliegue usará **ECS Rolling Update**:
+Dado que uso ECS Fargate, el despliegue usará **ECS Rolling Update**:
 1. Se levantan las nuevas tareas (vN).
 2. Se registran en el Target Group del ALB.
 3. Se verifican los Health Checks.
@@ -148,7 +148,7 @@ En el diseño y evolución futura, estos conceptos cumplen roles separados:
 - **AWS Secrets Manager:** Nunca se hardcodean credenciales. La contraseña maestra de la base de datos PostgreSQL se autogenera y almacena cifrada (KMS) en Secrets Manager. 
 - **Inyección en Tiempo de Ejecución (ECS):** En lugar de inyectar las credenciales como variables de entorno de texto plano (vulnerabilidad *OWASP A02: Secrets Exposure*), la definición de contenedores (Task Definition) mapea el ARN del secreto para que el agente ECS resuelva la credencial directamente en la memoria del contenedor de forma dinámica, manteniendo la consola y el código fuente libres de información sensible.
 
-> **Defensa Técnica (OWASP):** *"Cualquier información sensible, como la clave maestra de PostgreSQL, se almacena en Secrets Manager. Usamos el mapeo nativo de ECS para inyectar credenciales directamente a los contenedores, evitando exponerlas en variables de entorno estáticas y previniendo la vulnerabilidad de exposición de secretos (OWASP A02)"*.
+> **Defensa Técnica (OWASP):** *"Cualquier información sensible, como la clave maestra de PostgreSQL, se almacena en Secrets Manager. Uso el mapeo nativo de ECS para inyectar credenciales directamente a los contenedores, evitando exponerlas en variables de entorno estáticas y previniendo la vulnerabilidad de exposición de secretos (OWASP A02)"*.
 
 ## 7. Instrucciones de Despliegue (CDK)
 
