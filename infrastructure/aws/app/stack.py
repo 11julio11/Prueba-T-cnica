@@ -4,9 +4,10 @@ from aws_cdk import (
     aws_ecs as ecs,
     aws_ecs_patterns as ecs_patterns,
     aws_rds as rds,
-        aws_secretsmanager as secretsmanager,
+    aws_secretsmanager as secretsmanager,
     SecretValue,
-    CfnOutput
+    CfnOutput,
+    RemovalPolicy
 )
 from constructs import Construct
 
@@ -22,7 +23,14 @@ class InfrastructureStack(Stack):
             nat_gateways=1
         )
 
-
+        # Define strict SG: only backend can connect
+        db_sg = ec2.SecurityGroup(
+            self,
+            "DatabaseSG",
+            vpc=vpc,
+            description="Allow backend to connect to RDS",
+            allow_all_outbound=True,
+        )
 
         # 3. RDS PostgreSQL Database
         # Secret for DB Credentials
@@ -36,16 +44,21 @@ class InfrastructureStack(Stack):
         )
 
         # DB Instance
-        db_instance = rds.DatabaseInstance(
-            self, "PostgresDB",
-            engine=rds.DatabaseInstanceEngine.postgres(version=rds.PostgresEngineVersion.VER_15),
+        database = rds.DatabaseInstance(
+            self,
+            "RequestsDB",
+            engine=rds.DatabaseInstanceEngine.postgres(
+                version=rds.PostgresEngineVersion.VER_15
+            ),
+            instance_type=ec2.InstanceType.of(
+                ec2.InstanceClass.T3, ec2.InstanceSize.MICRO
+            ),
             vpc=vpc,
+            security_groups=[db_sg],
             credentials=rds.Credentials.from_secret(db_secret),
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
-            instance_type=ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
-            allocated_storage=20,
-            max_allocated_storage=50,
-            database_name="requests_db"
+            database_name="solicitudes_db",
+            storage_encrypted=True,
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         # 4. ECS Cluster
@@ -55,11 +68,10 @@ class InfrastructureStack(Stack):
             cluster_name="requests-cluster"
         )
 
-        # Allow ECS tasks to access the Database
-        db_instance.connections.allow_from(
-            ec2.Peer.ipv4(vpc.vpc_cidr_block),
-            ec2.Port.tcp(5432),
-            "Allow connection from ECS Tasks"
+        from aws_cdk import aws_certificatemanager as acm
+        dummy_cert = acm.Certificate.from_certificate_arn(
+            self, "DummyCert", 
+            "arn:aws:acm:us-east-1:123456789012:certificate/dummy-cert"
         )
 
         # 5. Backend Application (API via Fargate with Application Load Balancer)
@@ -73,8 +85,8 @@ class InfrastructureStack(Stack):
                 image=ecs.ContainerImage.from_asset("../../", file="backend/Dockerfile"),
                 container_port=8000,
                 environment={
-                    "POSTGRES_DB": "requests_db",
-                    "POSTGRES_HOST": db_instance.db_instance_endpoint_address
+                    "POSTGRES_DB": "solicitudes_db",
+                    "POSTGRES_HOST": database.db_instance_endpoint_address
                 },
                 secrets={
                     "POSTGRES_USER": ecs.Secret.from_secrets_manager(db_secret, "username"),
@@ -82,7 +94,16 @@ class InfrastructureStack(Stack):
                 }
             ),
             task_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
-            public_load_balancer=True
+            public_load_balancer=True,
+            certificate=dummy_cert,
+            redirect_http=True
+        )
+
+        backend_sg = backend_service.service.connections.security_groups[0]
+        db_sg.add_ingress_rule(
+            peer=backend_sg,
+            connection=ec2.Port.tcp(5432),
+            description="Allow backend to connect to RDS",
         )
 
         backend_service.target_group.configure_health_check(
@@ -98,6 +119,9 @@ class InfrastructureStack(Stack):
             cpu=256,
             memory_limit_mib=512
         )
+        
+        # WARNING: Using HTTP listener for the ALB as requested by the architecture diagram.
+        # In a production environment, this MUST be HTTPS (port 443) with a valid SSL/TLS certificate.
         
         consumer_task.add_container("ConsumerContainer",
             image=ecs.ContainerImage.from_asset("../../", file="consumer/Dockerfile"),
@@ -117,4 +141,4 @@ class InfrastructureStack(Stack):
 
         # Outputs
         CfnOutput(self, "ApiUrl", value=backend_service.load_balancer.load_balancer_dns_name)
-        CfnOutput(self, "DatabaseEndpoint", value=db_instance.db_instance_endpoint_address)
+        CfnOutput(self, "DatabaseEndpoint", value=database.db_instance_endpoint_address)

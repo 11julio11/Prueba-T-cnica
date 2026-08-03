@@ -16,6 +16,21 @@ jobs:
       run:
         working-directory: .
 
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,7 +48,7 @@ jobs:
       - name: Run unit tests
         env:
           PYTHONPATH: backend
-          DATABASE_URL: postgresql://test:test@localhost/test_db
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
         run: |
           pytest backend/tests -v --tb=short
 

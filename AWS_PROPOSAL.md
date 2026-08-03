@@ -88,7 +88,7 @@ flowchart TD
 ### Application Load Balancer (ALB) y Target Groups
 - El tráfico proveniente de internet llega inicialmente al **ALB** ubicado en la subred pública.
 - El ALB distribuye las peticiones HTTP a los contenedores del Backend alojados en la subred privada.
-- **Target Group:** Se configura un *Target Group* apuntando a los contenedores Fargate del backend en el puerto 8000. El ALB utiliza el endpoint `/api/v1/health/ready` para realizar los *Health Checks*. Si un contenedor falla, el ALB deja de enviarle tráfico y ECS lo reemplaza.
+- **Target Group:** Se configura un *Target Group* apuntando a los contenedores Fargate del backend en el puerto 8000. El ALB utiliza el endpoint `/health` para realizar los *Health Checks*. Si un contenedor falla, el ALB deja de enviarle tráfico y ECS lo reemplaza. Todas las peticiones HTTP son ruteadas por defecto a la API sin necesidad de reglas de reescritura, exponiendo correctamente los endpoints `/api/v1/requests`.
 
 ### CORS y Rate Limiting
 - **CORS (Cross-Origin Resource Sharing):** La configuración de CORS se maneja a nivel de aplicación (FastAPI a través de `CORSMiddleware`) permitiendo solo los orígenes confiables del frontend.

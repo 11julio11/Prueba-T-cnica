@@ -31,6 +31,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-secret}@db:5432/${POSTGRES_DB:-solicitudes_db}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       DEBUG: ${DEBUG:-false}
+      LOG_FILE: /app/logs/api.log
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:

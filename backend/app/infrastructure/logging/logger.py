@@ -47,8 +47,9 @@ def setup_logging(log_level: str = "INFO") -> None:
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
 
-    os.makedirs("logs", exist_ok=True)
-    file_handler = logging.FileHandler("logs/api.log")
+    log_file = os.getenv("LOG_FILE", "logs/api.log")
+    os.makedirs(os.path.dirname(os.path.abspath(log_file)), exist_ok=True)
+    file_handler = logging.FileHandler(log_file)
     file_handler.setFormatter(formatter)
 
     root = logging.getLogger()

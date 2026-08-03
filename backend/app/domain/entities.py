@@ -22,7 +22,8 @@ class InstitutionalRequest(pydantic.BaseModel):
 
     def update_status(self, new_status: Status) -> None:
         from backend.app.domain.exceptions import InvalidStatusTransitionError
-        if self.status is Status.COMPLETED and new_status is Status.RECEIVED:
-            raise InvalidStatusTransitionError(current=self.status, target=new_status)
+        if self.status in (Status.COMPLETED, Status.REJECTED):
+            if new_status is not self.status:
+                raise InvalidStatusTransitionError(current=self.status, target=new_status)
         self.status = new_status
         self.updated_at = datetime.now(timezone.utc)

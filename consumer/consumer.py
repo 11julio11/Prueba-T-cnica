@@ -64,23 +64,12 @@ MAX_DELAY_S = float(os.getenv("MAX_DELAY_S", "30.0"))
 TIMEOUT_S = float(os.getenv("TIMEOUT_S", "10.0"))
 STARTUP_WAIT_S = float(os.getenv("STARTUP_WAIT_S", "5.0"))
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    pg_user = os.getenv("POSTGRES_USER")
-    pg_pass = os.getenv("POSTGRES_PASSWORD")
-    pg_host = os.getenv("POSTGRES_HOST")
-    pg_db = os.getenv("POSTGRES_DB")
-    if pg_user and pg_pass and pg_host and pg_db:
-        DATABASE_URL = f"postgresql://{pg_user}:{pg_pass}@{pg_host}/{pg_db}"
-    else:
-        DATABASE_URL = "postgresql://test:test@localhost:5432/test"
-
 
 # ── Example requests ────────────────────────────────────────────────────
 
 APPLICATIONS: list[dict] = [
     {
-        "external_id": "11111111-1111-4111-a111-111111111111",
+        "external_id": "468a329d-48ef-4171-8bc6-92d525752945",
         "type": "technical_support",
         "requester_name": "Ana Martínez",
         "email": "ana.martinez@institucion.edu.co",
@@ -88,7 +77,7 @@ APPLICATIONS: list[dict] = [
         "priority": "high",
     },
     {
-        "external_id": "22222222-2222-4222-a222-222222222222",
+        "external_id": "b28b6d41-768f-410a-b36e-519280145c22",
         "type": "platform_access",
         "requester_name": "Carlos Pérez",
         "email": "carlos.perez@institucion.edu.co",
@@ -96,7 +85,7 @@ APPLICATIONS: list[dict] = [
         "priority": "medium",
     },
     {
-        "external_id": "33333333-3333-4333-a333-333333333333",
+        "external_id": "f491c10d-2b4a-4638-baef-034720970db1",
         "type": "academic",
         "requester_name": "Laura Gómez",
         "email": "laura.gomez@institucion.edu.co",
@@ -104,7 +93,7 @@ APPLICATIONS: list[dict] = [
         "priority": "high",
     },
     {
-        "external_id": "44444444-4444-4444-a444-444444444444",
+        "external_id": "e78b7bdf-1b4e-4b2a-8287-c3732ab2f9a6",
         "type": "administrative",
         "requester_name": "Juan Rodríguez",
         "email": "juan.rodriguez@institucion.edu.co",
@@ -112,7 +101,7 @@ APPLICATIONS: list[dict] = [
         "priority": "low",
     },
     {
-        "external_id": "55555555-5555-4555-a555-555555555555",
+        "external_id": "c8d9e6e3-2e45-42a1-bd88-0f1c37b75249",
         "type": "technical_support",
         "requester_name": "María López",
         "email": "maria.lopez@institucion.edu.co",
@@ -121,7 +110,7 @@ APPLICATIONS: list[dict] = [
     },
     # Intentionally invalid request to test 4xx error handling
     {
-        "external_id": "66666666-6666-4666-a666-666666666666",
+        "external_id": "a58b29f7-6b4d-4591-9e76-d384c7590d34",
         "type": "invalid_type",           # non-existent catalog value
         "requester_name": "Test Error",
         "email": "not-an-email",          # invalid email
@@ -341,7 +330,7 @@ def main() -> None:
 
     log.info(
         "Creation phase completed",
-        extra={"created": len(results), "failed": len(APPLICATIONS) - len(results)},
+        extra={"created_count": len(results), "failed": len(APPLICATIONS) - len(results)},
     )
 
     if not results:
