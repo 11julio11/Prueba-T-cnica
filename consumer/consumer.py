@@ -12,6 +12,7 @@ import random
 import time
 import sys
 import uuid
+import httpx
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -130,19 +131,13 @@ SOLICITUDES: list[dict] = [
 ]
 
 
-# ── Simple HTTP without external dependencies ─────────────────────────────────────
-
-import httpx
-
 def http_post(url: str, payload: dict, timeout: float, correlation_id: str = "") -> tuple[int, dict]:
-    start = time.perf_counter()
     req_id = correlation_id or str(uuid.uuid4())
     headers = {"X-Request-ID": req_id}
     try:
         with httpx.Client(timeout=timeout) as client:
             resp = client.post(url, json=payload, headers=headers)
             body = resp.json()
-            duration = int((time.perf_counter() - start) * 1000)
             return resp.status_code, body
     except httpx.HTTPStatusError as e:
         body = e.response.json() if e.response.content else {}
@@ -152,7 +147,6 @@ def http_post(url: str, payload: dict, timeout: float, correlation_id: str = "")
         raise e
 
 def http_get(url: str, timeout: float, correlation_id: str = "") -> tuple[int, dict]:
-    start = time.perf_counter()
     req_id = correlation_id or str(uuid.uuid4())
     headers = {"X-Request-ID": req_id}
     try:
