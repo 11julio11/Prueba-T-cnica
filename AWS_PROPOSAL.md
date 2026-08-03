@@ -13,7 +13,7 @@ Antes de detallar el despliegue en la nube, es fundamental entender el "por qué
   Los tests unitarios no prueban las entidades o modelos de forma aislada y anémica. Siguiendo las prácticas modernas de desarrollo y diseño de software, los tests atacan directamente los **Casos de Uso**. El caso de uso es la capa que orquesta las entidades, aplica las reglas del negocio y coordina con los repositorios. Testear a este nivel asegura que estamos probando el *comportamiento y las reglas de negocio reales* que aportan valor al usuario, y no simplemente testeando el estado interno de un objeto de Python. Además, nos permite inyectar dependencias simuladas (Mocks) para probar escenarios complejos como la concurrencia.
 
 - **Modelado Cloud-Native Serverless:**
-  En lugar de usar servidores EC2 tradicionales, se optó por AWS Fargate (Serverless). Esto remueve la carga operativa de parchear y administrar sistemas operativos. Junto con el uso de **SQS** para desacoplar procesos pesados (como simuladores o envío de correos), nos aseguramos de que los picos de tráfico en la creación de solicitudes no saturen el procesamiento HTTP, garantizando resiliencia y alta disponibilidad.
+  En lugar de usar servidores EC2 tradicionales, se optó por AWS Fargate (Serverless). Esto remueve la carga operativa de parchear y administrar sistemas operativos. El consumidor HTTP se ejecuta independientemente y simula el tráfico de peticiones para asegurar resiliencia y pruebas de carga constantes.
 
 ## 2. Diagrama de Infraestructura AWS
 
@@ -29,7 +29,6 @@ architecture-beta
     service alb(server)[Application Load Balancer] in public
     service backend(server)[Backend ECS Fargate] in private
     service rds(database)[RDS PostgreSQL] in private
-    service sqs(server)[SQS Message Queue] in aws
     service consumer(server)[Consumer ECS Fargate] in private
     service secrets(cloud)[AWS Secrets Manager] in aws
     service cloudwatch(cloud)[CloudWatch] in aws
@@ -37,8 +36,7 @@ architecture-beta
     
     alb:R --> L:backend
     backend:R --> L:rds
-    backend:T --> B:sqs
-    sqs:L --> R:consumer
+    consumer:R --> L:alb
     backend:B --> T:secrets
     consumer:B --> T:secrets
     backend:L --> R:cloudwatch
@@ -67,7 +65,7 @@ Aplicamos el principio de menor privilegio en la red:
   - **Outbound:** Solo permite tráfico hacia el Security Group del Backend.
 - **Backend Security Group (ECS):**
   - **Inbound:** Permite tráfico en el puerto 8000 proveniente **exclusivamente** del ALB. Sin exposición a internet directo.
-  - **Outbound:** Tráfico hacia el *RDS Security Group* en el puerto 5432 y salida a internet (vía NAT Gateway) para conectar con SQS.
+  - **Outbound:** Tráfico hacia el *RDS Security Group* en el puerto 5432 y salida para telemetría.
 - **RDS PostgreSQL Security Group:**
   - **Inbound:** Tráfico TCP en el puerto 5432 proveniente **únicamente** del *Backend Security Group*.
 
@@ -75,8 +73,8 @@ Aplicamos el principio de menor privilegio en la red:
 
 - **Capa de Cómputo (Backend HTTP):** 
   Utiliza **Application Auto Scaling**. Si el uso promedio de CPU/Memoria excede el 70% durante 2 minutos, Fargate aprovisiona más contenedores dinámicamente (Scale-Out) y los registra en el ALB. Cuando la carga disminuye, remueve las instancias (Scale-In).
-- **Capa Asíncrona (Consumer Worker):**
-  La escalabilidad del consumidor se mide por la **longitud de la cola SQS**. Si hay un pico masivo de mensajes pendientes por procesar, AWS levanta múltiples *Workers* en paralelo para vaciar la cola rápidamente, operando de manera independiente a la API principal.
+- **Capa Asíncrona / Simulación (Consumer):**
+  La escalabilidad del consumidor puede ajustarse lanzando múltiples tareas Fargate en paralelo para simular tráfico pesado y probar los límites del Load Balancer y la API principal.
 - **Base de Datos (Amazon RDS):**
   Desplegada en configuración **Multi-AZ** para conmutación por error automática (Failover) en caso de caída del servidor principal. Para escalar las lecturas de los analistas, se pueden añadir *Read Replicas*.
 
